@@ -1,0 +1,14 @@
+{
+  "name": "batus",
+  "version": "0.1.0",
+  "description": "A taste-grounded comfort companion: when your mind won't stop, it plays your own kind of praise music, found through Qloo's taste graph.",
+  "type": "module",
+  "license": "MIT",
+  "private": false,
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "node --test \"test/*.test.js\""
+  }
+}
