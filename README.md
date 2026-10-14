@@ -1,6 +1,6 @@
 # Batus: when your mind won't stop, your own praise music answers first
 
-**Links:** Live demo: _add after deploy_ · Repo: this repo · Built for the [Qloo Agentic Hackathon](https://qloo.devpost.com/) (deadline 31 Oct 2026)
+**Links:** Live demo: _add after deploy_ · Repo: [github.com/Agozie180/Batus](https://github.com/Agozie180/Batus) · Built for the [Qloo Agentic Hackathon](https://qloo.devpost.com/) (deadline 31 Oct 2026)
 
 > **Batus never invents music. Every artist it suggests is either one you gave it or one the Qloo taste graph returned for you, and the code blocks anything else.**
 
@@ -55,7 +55,7 @@ Batus is built for a real audience: people in hard seasons, and especially liste
 ## Try it in 30 seconds
 
 ```bash
-git clone <this repo> && cd batus
+git clone https://github.com/Agozie180/Batus && cd Batus
 cp .env.example .env      # optional: add your QLOO_API_KEY
 export $(cat .env | xargs)   # or set the variable your own way
 npm start                 # http://localhost:3000
