@@ -1,14 +1,21 @@
 {
   "name": "batus",
-  "version": "0.1.0",
-  "description": "A taste-grounded comfort companion: when your mind won't stop, it plays your own kind of praise music, found through Qloo's taste graph.",
+  "version": "0.2.0",
+  "description": "A taste-grounded comfort companion: when your mind won't stop, it finds your own kind of praise music through Qloo's taste graph.",
   "type": "module",
   "license": "MIT",
   "private": false,
   "engines": { "node": ">=20" },
   "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js",
-    "test": "node --test \"test/*.test.js\""
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "test": "node --test \"test/*.test.js\"",
+    "coverage": "node scripts/coverage.mjs"
+  },
+  "dependencies": {
+    "next": "^16.4.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   }
 }

@@ -1,87 +1,112 @@
 # Batus: when your mind won't stop, your own praise music answers first
 
-**Links:** Live demo: _add after deploy_ · Repo: [github.com/Agozie180/Batus](https://github.com/Agozie180/Batus) · Built for the [Qloo Agentic Hackathon](https://qloo.devpost.com/) (deadline 31 Oct 2026)
+**Links:** Live demo: _add your Vercel URL after deploy_ · Repo: [github.com/Agozie180/Batus](https://github.com/Agozie180/Batus) · Built for the [Qloo Agentic Hackathon](https://qloo.devpost.com/)
 
-> **Batus never invents music. Every artist it suggests is either one you gave it or one the Qloo taste graph returned for you, and the code blocks anything else.**
+> **Batus never invents music. It picks from the Qloo taste graph by ID, and the code throws away anything that did not come back from Qloo or from the person's own list.**
 
-Overthinking and worry don't arrive on a schedule. After a result you hoped for doesn't come, or when money and food feel uncertain, generic advice ("go for a walk", "try calming music") rarely sticks. What does work for many people is *their own* music. Batus is a small comfort companion that takes one tap, asks how you feel, and puts your kind of praise and worship music in front of you, local and international, with a link to play it right now.
+Overthinking and worry don't arrive on a schedule. After a result you hoped for doesn't come, or when money and food feel uncertain, generic advice ("go for a walk", "try calming music") rarely sticks. What does help many people is *their own* music. Batus takes one tap, asks how you feel, and puts your kind of praise and worship music in front of you, local and international, with a link to play it right now. It then goes a step further and suggests something to listen to or watch from the same taste.
 
-Batus is built for a real audience: people in hard seasons, and especially listeners of Nigerian and international gospel, whose taste generic playlists rarely reflect.
+**Who it is for:** people in hard seasons, especially listeners of Nigerian and international gospel, whose taste generic playlists and LLM answers rarely reflect.
+
+## Why Qloo is the difference
+
+| A chatbot alone | Batus |
+|---|---|
+| Guesses what "calming music" means; defaults to the same global names | Asks Qloo what people with *your* taste love, nudged by mood (worship vs praise) and place |
+| Can invent an artist that does not exist | Cannot: it recommends by Qloo ID and the code drops any ID that Qloo did not return |
+| Music only | Music, plus podcasts and TV matched by the same taste signals |
+| Forgets you | Heart a match and it joins your taste profile (kept in your browser) for next time |
 
 ## How it works
 
 ```
- check-in text ──► safety gate ──(crisis language?)──► stop, show human help
+ check-in text ──► safety gate ──(crisis language?)──► stop. Human help only. No Qloo, no Claude call.
         │ no
         ▼
- your artists ──► Qloo /search ──► entity ids
-                       │
-                       ▼
-        Qloo /v2/tags (gospel) + /v2/insights (taste graph)
-                       │
-                       ▼
-   grounding check (assertGrounded) ──► picks + play links (YouTube / Spotify / Audiomack)
-                       │
-                       ▼
-   short, warm, template-based message  (cannot name any music)
+ your artists ──► Qloo /search (live typeahead picks give Qloo ids up front)
+        │
+        ├─ Claude agent ON ─► tools: find_artist · taste_matches (artist | podcast | tv_show) · finish
+        │                      Claude chooses by ID, writes one warm message
+        │                      code keeps only IDs the tools returned
+        │
+        └─ Claude agent OFF / fails ─► deterministic pipeline:
+              /v2/tags (gospel + worship|praise) + /v2/insights (+ location)
+              degrade: drop location → drop tags
+        ▼
+ assertGrounded ──► picks + extras + play links (YouTube / Spotify / Audiomack)
 ```
 
 ## What's used, and what's deliberately not
 
 | Surface | Used | Notes |
 |---|---|---|
-| Qloo `GET /search` (`urn:entity:artist`) | Yes | Resolves each favourite artist to a Qloo entity |
-| Qloo `GET /v2/tags` | Yes | Biases results toward the gospel taste tag; falls back cleanly if it fails |
-| Qloo `GET /v2/insights` | Yes | Taste-graph recommendations from your artist signals |
-| An LLM | No | The wording layer is deterministic templates. Music choice is Qloo's job, so the grounding rule can be proven by tests instead of trusted |
-| Audio hosting / streaming APIs | No | Qloo returns taste, not audio. Batus deep-links to YouTube, Spotify and Audiomack searches |
+| Qloo `GET /search` | Yes | Powers the live artist typeahead and ID resolution |
+| Qloo `GET /v2/tags` | Yes | Resolves `gospel` plus a mood tag (`worship` for Calm, `praise` for Lift me up) |
+| Qloo `GET /v2/insights` | Yes | Artists, podcasts and TV shows; optional `signal.location.query` for local relevance |
+| Claude (tool use) | Optional | Runs the agent loop and writes the message. Off if `ANTHROPIC_API_KEY` is unset, and the app still works fully |
+| Audio hosting / streaming APIs | No | Qloo returns taste, not audio. Batus deep-links to platform searches |
 | Accounts, database, analytics | No | Nothing about you is stored server-side |
 
 ## The thesis, enforced (not asserted)
 
 | The system decides | The system is structurally prevented from |
 |---|---|
-| Which artists to show, from Qloo results and your own list | Showing any artist that is neither (`assertGrounded` throws; tested) |
-| What to say, from fixed warm templates | Naming music in the message layer (templates have no music slots) |
-| Whether to pause for safety | Running any recommendation code after crisis language is detected (tested: the Qloo client is never called) |
+| Which artists, podcasts and shows to show, from Qloo results plus your own list | Showing anything else. `assertGrounded` throws; the agent's chosen IDs are filtered against what its own tool calls returned (tested) |
+| What to say, via Claude or fixed templates | Naming music in that message. A message that contains a Qloo result's name is discarded and replaced by template wording (tested) |
+| Whether to pause for safety | Running any music logic or calling Claude after crisis language is detected (tested: neither Qloo nor Claude is called) |
+| Which artists count as "yours" | Echoing them back as recommendations |
 
 ## Measured
 
 | Claim | Result | Reproduce with |
 |---|---|---|
-| Behaviour tests pass (crisis gate, Qloo client, fallbacks, grounding, server) | 13 / 13 | `npm test` |
-| Runs with no dependencies | `package.json` has none | `npm start` |
+| Behaviour tests (crisis gate, Qloo client, fallbacks, agent loop, grounding) | 26 / 26 passing | `npm test` |
+| Production build | Passes, 0 known dependency vulnerabilities | `npm run build && npm audit` |
+| End-to-end over real HTTP: UI → API → agent → Qloo/Claude tools → UI | Exercised against a local stand-in for both services | see Limitations |
+| Qloo coverage of Nigerian and international gospel artists | **Not measured yet** | `QLOO_API_KEY=… npm run coverage` writes `COVERAGE.md` |
 
 ## Try it in 30 seconds
 
+Live: open the demo link above and tap **Start my praise break**. A starter profile is already filled in.
+
+Locally:
+
 ```bash
 git clone https://github.com/Agozie180/Batus && cd Batus
-cp .env.example .env      # optional: add your QLOO_API_KEY
-export $(cat .env | xargs)   # or set the variable your own way
-npm start                 # http://localhost:3000
+npm install
+cp .env.example .env.local     # add QLOO_API_KEY (and optionally ANTHROPIC_API_KEY)
+npm run dev                    # http://localhost:3000
+npm test
 ```
 
-1. Tap **Both** under "Try a starter".
-2. Tap **Results came out**, choose **Lift me up**, then **Start my praise break**.
-3. To see the safety behaviour, type `I want to end my life` and start again. Batus pauses the music and shows human help.
+Things to try:
+1. Type "Sinach" in *Favourite artists*. Suggestions come live from Qloo, with a photo when Qloo has one.
+2. Choose **Calm me**, then **Lift me up** with the same artists and open *How this was chosen* to see the mood tag change.
+3. Set **Near** to a city and compare the matches.
+4. Tap ♡ on a match, reload the page, and it is in your sound.
+5. Type `I want to end my life` and start. Batus stops the music and shows human help.
 
-Without `QLOO_API_KEY` the app runs in **sample mode**: a small fixed list, clearly labelled "Sample data (no Qloo key set)" in the UI. It is never passed off as live Qloo output.
+Without `QLOO_API_KEY` the app runs in **sample mode**: a small fixed list, labelled "Sample data (no Qloo key set)" in the UI, never passed off as live Qloo output.
 
-## Deploy
+## Deploy to Vercel
 
-A `Dockerfile` and `render.yaml` are included. On Render: New → Blueprint → this repo, then set `QLOO_API_KEY` in the dashboard. Any Node 20+ host works (`npm start`, honours `PORT`).
+1. Import this repo at [vercel.com/new](https://vercel.com/new). The Next.js preset needs no changes.
+2. Add environment variables: `QLOO_API_KEY` (required for live data) and `ANTHROPIC_API_KEY` (optional, turns on the agent).
+3. Deploy. Check `/api/health`: it reports `{"qloo":true,"agent":true}` when both keys are active.
 
 ## Limitations, stated plainly
 
-- **The live Qloo path has been verified against mocked responses only**, not yet against a real API key from this build. Response parsing is deliberately defensive and every Qloo step has a fallback, but expect to tune field names on first real run. Check the "How this was chosen" panel in the UI for what actually happened.
-- Qloo returns artists, not songs. Playback is a search link on a streaming platform, so the first result may not be the exact track you want.
-- Coverage of Nigerian gospel artists in Qloo has not been measured yet. If an artist isn't found, Batus tells you and still shows your own songs.
+- **The live Qloo and Claude calls have been exercised only against local stand-ins that mimic their documented responses, not against the real services from this build.** Response parsing is defensive and every Qloo step has a fallback, but expect small tuning on the first real run. Check *How this was chosen* in the UI for what actually happened.
+- Coverage of Nigerian gospel artists in Qloo is unmeasured until `npm run coverage` is run with a key. If Qloo does not know an artist, Batus says so and still shows your own songs.
+- Qloo returns artists, shows and podcasts, not tracks. Playback is a platform search link, so the first result may not be the exact song you want.
+- The AI agent's wording is instructed and checked (its message is discarded if it names a Qloo result) but it is still model-written text. Picks are structurally grounded; prose is only guarded.
+- When the Claude writer is on, your check-in text is sent to Claude to compose the reply. You can turn it off in the app. Crisis text is never sent.
 - The crisis screen is a conservative keyword check, not a clinical assessment. It can miss indirect wording and can show on harmless phrases.
-- Mood modes (Calm / Lift me up) currently change the play-link search, not the Qloo query.
+- Rate limiting is best-effort per serverless instance.
 
 ## Disclosures
 
-Batus is a comfort companion, not therapy, diagnosis or medical advice. It does not replace people who care about you. If you may act on thoughts of harming yourself, contact local emergency services or a trusted person, and see [findahelpline.com](https://findahelpline.com). Check-in text is processed in memory to compose a reply and is never stored or logged. Your artist list lives in your browser's local storage only.
+Batus is a comfort companion, not therapy, diagnosis or medical advice. It does not replace people who care about you. If you may act on thoughts of harming yourself, contact local emergency services or a trusted person, and see [findahelpline.com](https://findahelpline.com). Batus never stores or logs check-in text. Your artist list lives in your browser's local storage only.
 
 ## License
 
