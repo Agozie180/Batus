@@ -111,6 +111,31 @@ export default function Result({ data, theme, mode, savedNames, player, playlist
         {breathing && <Breathe onDone={() => setBreathing(false)} />}
       </div>
 
+      {data.set?.length > 0 && (
+        <section className="set" aria-label="A set for you">
+          <h2 className="section-title">{data.setBy === 'claude' ? 'A set chosen for what you are going through' : 'A set matched to your mood'}</h2>
+          <p className="hint">
+            {data.setBy === 'claude'
+              ? 'Real songs by artists Qloo matched to your taste, picked and ordered for you. Listen top to bottom.'
+              : 'Real songs by artists Qloo matched to your taste, picked by mood words in their titles. Listen top to bottom.'}
+          </p>
+          <div className="songs">
+            {data.set.map((song, i) => (
+              <div key={song.id} className="setrow">
+                <span className="num" aria-hidden="true">{i + 1}</span>
+                <div className="setbody">
+                  <SongRow song={song} player={player} inList={inList(song)} onAdd={onAddSong} />
+                  {song.why && <p className="why">{song.why}</p>}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="pactions">
+            <button type="button" className="chip" onClick={() => data.set.filter((x) => !inList(x)).forEach(onAddSong)}>Add the whole set to my playlist</button>
+          </div>
+        </section>
+      )}
+
       {hero && <Hero p={hero} saved={saved(hero)} onSave={onSave} {...song} />}
 
       {data.favourites.length > 0 && (
@@ -127,7 +152,7 @@ export default function Result({ data, theme, mode, savedNames, player, playlist
         </>
       )}
 
-      <h2 className="section-title">{hero ? 'More that match your taste' : 'Matched to your taste'}</h2>
+      <h2 className="section-title">{hero ? 'More artists that match your taste' : 'Matched to your taste'}</h2>
       {music.length === 0 ? (
         <p className="empty">
           {data.source === 'error'

@@ -341,3 +341,8 @@ details.sound[open] > summary, details.playlists[open] > summary { margin-bottom
   .song { grid-template-columns: 52px 1fr; }
   .sact { grid-column: 1 / -1; justify-content: flex-start; }
 }
+
+.set { margin-bottom: 8px; }
+.setrow { display: grid; grid-template-columns: 22px 1fr; gap: 8px; align-items: start; }
+.setrow .num { color: var(--accent); font: 700 1rem var(--display); padding-top: 18px; text-align: center; }
+.setbody .why { margin: 6px 4px 4px; color: var(--muted); font-size: 0.88rem; font-style: italic; }

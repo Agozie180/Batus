@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { topSongs, attachSongs } from '../lib/songs.js';
+import { pickSet } from '../lib/songpick.js';
 import { createQlooClient } from '../lib/qloo.js';
 import { diagnose } from '../lib/diagnose.js';
 import { handlePraise } from '../lib/praise.js';
@@ -29,11 +30,52 @@ test('songs are attached to artist picks only, capped', async () => {
   assert.deepEqual(out[2].songs, []);
 });
 
-test('handlePraise returns real songs for Qloo-picked artists', async () => {
+test('handlePraise returns a mood-matched set of real songs when Claude is off', async () => {
   const r = await handlePraise({ artists: [{ name: 'Adele' }], mode: 'release', ai: false }, { apiKey: 'k', anthropicKey: '', fetchImpl: router(routes) });
   assert.equal(r.source, 'qloo');
-  assert.ok(r.picks[0].songs.length > 0);
-  assert.match(r.picks[0].songs[0].title, /Song One/);
+  assert.equal(r.setBy, 'mood-match');
+  assert.ok(r.set.length > 0);
+  assert.ok(r.set.every((s) => s.id && s.title && s.why));
+});
+
+function claudeRoute(ids) {
+  return { 'api.anthropic.com/v1/messages': () => ok({ content: [{ type: 'tool_use', name: 'choose_songs', input: { songs: ids.map((id) => ({ id, why: 'Fits your situation' })) } }] }) };
+}
+const pickRoutes = (songs) => ({
+  ...routes,
+  'itunes.apple.com/search': (u) => ok({ results: songs.map((t, i) => ({ kind: 'song', trackId: 900 + i, trackName: t, artistName: u.searchParams.get('term'), previewUrl: 'https://a/p.m4a' })) }),
+});
+
+test('Claude chooses by id: the situation-fitting song wins, invented ids are dropped', async () => {
+  const fetchImpl = router({ ...pickRoutes(['Tears Tonight', 'Dance Floor', 'Goodbye Again', 'Quiet Rain']), ...claudeRoute(['901', '999999', '902', '903']) });
+  const out = await pickSet({ picks: [{ type: 'artist', name: 'Adele' }], text: 'she left me', mode: 'release', anthropicKey: 'k', fetchImpl, useCache: false });
+  assert.equal(out.by, 'claude');
+  assert.deepEqual(out.songs.map((s) => s.id), ['901', '902', '903']); // 999999 was never a candidate
+  assert.equal(out.songs[0].why, 'Fits your situation');
+});
+
+test('without Claude, mood words in titles pick the songs (heartbreak vs dance differ)', async () => {
+  const fetchImpl = router(pickRoutes(['Dance Floor Joy', 'Tears and Goodbye', 'Plain Title', 'Lonely Rain']));
+  const sad = await pickSet({ picks: [{ type: 'artist', name: 'Adele' }], mode: 'release', fetchImpl, useCache: false });
+  const fun = await pickSet({ picks: [{ type: 'artist', name: 'Adele' }], mode: 'dance', fetchImpl, useCache: false });
+  assert.match(sad.songs[0].title, /Tears|Lonely/);
+  assert.match(fun.songs[0].title, /Dance/);
+  assert.equal(sad.by, 'mood-match');
+});
+
+test('Claude failure falls back to mood matching, never to nothing', async () => {
+  const fetchImpl = router({ ...pickRoutes(['Tears Tonight', 'Goodbye']), 'api.anthropic.com/v1/messages': () => fail(500) });
+  const out = await pickSet({ picks: [{ type: 'artist', name: 'Adele' }], mode: 'release', anthropicKey: 'k', fetchImpl, useCache: false });
+  assert.equal(out.by, 'mood-match');
+  assert.ok(out.songs.length > 0);
+  assert.match(out.note, /unavailable/);
+});
+
+test('the check-in text is not sent to Claude when the person turns AI off', async () => {
+  const seen = [];
+  const fetchImpl = router({ ...routes, 'api.anthropic.com/v1/messages': (u, o) => { seen.push(o.body); return fail(500); } });
+  await handlePraise({ artists: [{ name: 'Adele' }], mode: 'release', ai: false, text: 'private words' }, { apiKey: 'k', anthropicKey: 'ak', fetchImpl });
+  assert.equal(seen.length, 0);
 });
 
 test('Qloo client retries a 429 then succeeds', async () => {

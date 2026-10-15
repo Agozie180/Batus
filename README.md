@@ -1,6 +1,6 @@
 # Batus: when your mind won't stop or your heart is hurting, your own music answers first
 
-[![CI](https://github.com/Agozie180/Batus/actions/workflows/ci.yml/badge.svg)](https://github.com/Agozie180/Batus/actions/workflows/ci.yml) ![tests](https://img.shields.io/badge/tests-50%20passing-brightgreen) ![license](https://img.shields.io/badge/license-MIT-blue) ![Qloo](https://img.shields.io/badge/powered%20by-Qloo-f2b04c)
+[![CI](https://github.com/Agozie180/Batus/actions/workflows/ci.yml/badge.svg)](https://github.com/Agozie180/Batus/actions/workflows/ci.yml) ![tests](https://img.shields.io/badge/tests-54%20passing-brightgreen) ![license](https://img.shields.io/badge/license-MIT-blue) ![Qloo](https://img.shields.io/badge/powered%20by-Qloo-f2b04c)
 
 | | |
 |---|---|
@@ -21,7 +21,7 @@ Overthinking and worry don't arrive on a schedule. After a result you hoped for 
 | **Worry & overthinking** | *Calm me* · *Lift me up* | Artists matching your taste, nudged by music mood tags Qloo resolves at run time (calm, ambient, acoustic / upbeat, dance, feel good) |
 | **Heartbreak** (a breakup, from either side) | *Let it out* (sad songs to feel) · *Move on* (empowering, uplifting) | The same, with sad / heartbreak / ballad / soul or empowering / uplifting tags |
 
-**No artist is hard-coded.** Every artist comes from the person (typeahead backed by Qloo search) or from Qloo's taste graph, in any genre, language or country. With no seed artists at all, Batus asks Qloo from the mood alone. Each artist comes with **real songs and 30-second previews** (public iTunes Search API), and you build **your own playlists** from them, one per mood, saved on your device.
+**No artist is hard-coded.** Every artist comes from the person (typeahead backed by Qloo search) or from Qloo's taste graph, in any genre, language or country. With no seed artists at all, Batus asks Qloo from the mood alone. Batus then builds **a set of real songs for what you are going through**: it pulls tracks by the artists Qloo returned (public iTunes Search API, with 30-second previews) and selects and orders them for your situation. With the Claude key on, Claude reads your check-in and the numbered song list and chooses by id, with a one-line reason per song (an invented id is dropped). Without it, mood words in titles pick them. You can add songs to **your own playlists**, one per mood, saved on your device.
 
 It then goes a step further and suggests something to listen to or watch from the same taste, and shows a **taste signature** (the top tags Qloo attached to your matches) with a match bar for each artist.
 
@@ -63,7 +63,7 @@ It then goes a step further and suggests something to listen to or watch from th
 | Qloo `GET /v2/tags` | Yes | Resolves mood keywords to music tags (first two found per mode) |
 | Qloo `GET /v2/insights` | Yes | Artists, podcasts and TV shows; optional `signal.location.query` for local relevance |
 | Claude (tool use) | Optional | Runs the agent loop and writes the message. Off if `ANTHROPIC_API_KEY` is unset, and the app still works fully |
-| iTunes Search API (public, no key) | Yes | Real songs and 30-second previews for artists Qloo chose. Optional: without it, YouTube/Spotify search links |
+| iTunes Search API (public, no key) | Yes | Real tracks (and 30-second previews) of artists Qloo chose; the set is picked from these. Optional: without it, YouTube/Spotify search links |
 | Streaming accounts | No | Full songs open on YouTube or Spotify via links |
 | Accounts, database, analytics | No | Nothing about you is stored server-side |
 
@@ -81,7 +81,7 @@ It then goes a step further and suggests something to listen to or watch from th
 
 | Claim | Result | Reproduce with |
 |---|---|---|
-| Behaviour tests (crisis gate, Qloo client, fallbacks, agent loop, grounding) | 50 / 50 passing | `npm test` |
+| Behaviour tests (crisis gate, Qloo client, fallbacks, agent loop, grounding) | 54 / 54 passing | `npm test` |
 | Production build | Passes, 0 known dependency vulnerabilities | `npm run build && npm audit` |
 | End-to-end over real HTTP: UI → API → agent → Qloo/Claude tools → UI | Exercised against a local stand-in for both services | see Limitations |
 | Self-audit: findings fixed and pinned by tests | 7 findings, see [AUDIT.md](./AUDIT.md) | `npm test` |
@@ -123,7 +123,7 @@ Without `QLOO_API_KEY` the app runs in **sample mode**: a small fixed list, labe
 
 - **The live Qloo and Claude calls have been exercised only against local stand-ins that mimic their documented responses, not against the real services from this build.** Response parsing is defensive and every Qloo step has a fallback, but expect small tuning on the first real run. Check *How this was chosen* in the UI for what actually happened.
 - Qloo's coverage of any particular artist is unmeasured until `npm run coverage` is run with a key. If Qloo does not know an artist, Batus says so and falls back to the mood alone.
-- Songs come from Apple's public iTunes Search API, ranked by Apple, not by mood. Previews are 30 seconds; full songs open on YouTube or Spotify.
+- Songs come from Apple's public iTunes Search API. Which of them fit your situation is decided by Claude (when on) from titles and what it knows of the songs, or by mood words in titles when off. Neither hears the audio or reads lyrics, so a pick can miss. Previews are 30 seconds; full songs open on YouTube or Spotify.
 - If something shows "Qloo problem", open `/api/diagnose`: it shows the real HTTP status from each call.
 - The AI agent's wording is instructed and checked (its message is discarded if it names a Qloo result) but it is still model-written text. Picks are structurally grounded; prose is only guarded.
 - When the Claude writer is on, your check-in text is sent to Claude to compose the reply. You can turn it off in the app. Crisis text is never sent.
