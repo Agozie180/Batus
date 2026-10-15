@@ -22,15 +22,15 @@ test('heartbreak modes use heartbreak tags, not gospel', async () => {
   const log = [];
   await recommend({ artists: [{ name: 'Tems' }], mode: 'release', apiKey: 'k', fetchImpl: router(qlooRoutes, log) });
   const q = log.find((c) => c.path === '/v2/insights' && c.params['filter.type'] === 'urn:entity:artist');
-  assert.match(q.params['signal.interests.tags'], /tag-heartbreak/);
-  assert.doesNotMatch(q.params['signal.interests.tags'], /tag-gospel/);
+  assert.match(q.params['signal.interests.tags'], /genre:music:sad/);
+  assert.doesNotMatch(q.params['signal.interests.tags'], /genre:music:upbeat/);
 });
 
 test('"Move on" asks Qloo for uplifting tags', async () => {
   const log = [];
   await recommend({ artists: [{ name: 'Tems' }], mode: 'heal', apiKey: 'k', fetchImpl: router(qlooRoutes, log) });
   const q = log.find((c) => c.path === '/v2/insights' && c.params['filter.type'] === 'urn:entity:artist');
-  assert.match(q.params['signal.interests.tags'], /tag-uplifting/);
+  assert.match(q.params['signal.interests.tags'], /genre:music:empowering/);
 });
 
 test('play links use heartbreak wording for heartbreak modes', () => {

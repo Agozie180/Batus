@@ -17,21 +17,21 @@ test('live path: Qloo artists, seeds dropped, mood tag + location sent, cross-do
   assert.deepEqual(r.picks.map((p) => p.name), ['Dunsin Oyekan', 'Sinach']);
   assert.equal(r.picks[0].affinity, 0.91);
   assert.equal(r.picks[0].image, 'https://img/a1.jpg');
-  assert.match(r.picks[0].links.youtube, /praise%20dance%20songs/);
+  assert.match(r.picks[0].links.youtube, /uplifting%20dance%20songs/);
   assert.deepEqual(r.extras.map((e) => e.name).sort(), ['Gentle Evenings', 'Morning Grace']);
   assert.equal(r.favourites[0].title, 'Bata');
 
   const artistQuery = log.find((c) => c.path === '/v2/insights' && c.params['filter.type'] === 'urn:entity:artist');
   assert.equal(artistQuery.params['signal.location.query'], 'Lagos');
-  assert.match(artistQuery.params['signal.interests.tags'], /tag-gospel/);
-  assert.match(artistQuery.params['signal.interests.tags'], /tag-praise/); // dance mood
+  assert.match(artistQuery.params['signal.interests.tags'], /genre:music:upbeat/);
+  assert.match(artistQuery.params['signal.interests.tags'], /genre:music:dance/); // dance mood
 });
 
 test('calm mode biases toward the worship tag', async () => {
   const log = [];
   await recommend({ artists: [{ name: 'Sinach' }], mode: 'calm', apiKey: 'k', fetchImpl: router(qlooRoutes, log) });
   const q = log.find((c) => c.path === '/v2/insights' && c.params['filter.type'] === 'urn:entity:artist');
-  assert.match(q.params['signal.interests.tags'], /tag-worship/);
+  assert.match(q.params['signal.interests.tags'], /genre:music:calm/);
 });
 
 test('ids chosen from typeahead skip the search call', async () => {
@@ -76,11 +76,53 @@ test('Qloo outage returns source=error but still gives the person their own song
   assert.equal(r.favourites.length, 1);
 });
 
-test('artists Qloo does not know -> source=none with a plain explanation', async () => {
+test('artists Qloo does not know: says so, and falls back to the mood alone', async () => {
   const routes = { ...qlooRoutes, '/search': () => fail(404) };
-  const r = await recommend({ artists: [{ name: 'Nobody Known' }], apiKey: 'k', fetchImpl: router(routes) });
-  assert.equal(r.source, 'none');
+  const log = [];
+  const r = await recommend({ artists: [{ name: 'Nobody Known' }], apiKey: 'k', fetchImpl: router(routes, log) });
   assert.match(r.trace.join(' '), /Qloo has no match/);
+  assert.equal(r.source, 'qloo');
+  const q = log.find((c) => c.path === '/v2/insights' && c.params['filter.type'] === 'urn:entity:artist');
+  assert.equal(q.params['signal.interests.entities'], undefined);
+  assert.match(q.params['signal.interests.tags'], /genre:music/);
+});
+
+test('no artists at all: Qloo is asked from the mood alone (international, nothing hard-coded)', async () => {
+  const log = [];
+  const r = await recommend({ artists: [], mode: 'release', apiKey: 'k', fetchImpl: router(qlooRoutes, log) });
+  assert.equal(r.source, 'qloo');
+  assert.ok(r.picks.length > 0);
+  assert.equal(log.filter((c) => c.path === '/search').length, 0);
+});
+
+test('no artists and no usable mood tag -> source=none with a plain explanation', async () => {
+  const routes = { ...qlooRoutes, '/v2/tags': () => ok({ results: { tags: [] } }) };
+  const r = await recommend({ artists: [], apiKey: 'k', fetchImpl: router(routes) });
+  assert.equal(r.source, 'none');
+  assert.match(r.trace.join(' '), /Add an artist/);
+});
+
+test('a refused key is reported with its real status, not a vague "unavailable"', async () => {
+  const routes = { ...qlooRoutes, '/search': () => fail(403), '/v2/tags': () => fail(403), '/v2/insights': () => fail(403) };
+  const r = await recommend({ artists: [{ name: 'Adele' }], apiKey: 'bad', fetchImpl: router(routes) });
+  assert.equal(r.source, 'error');
+  assert.equal(r.problem.status, 403);
+  assert.match(r.problem.message, /refused the API key/);
+});
+
+test('empty result with mood tags retries without them', async () => {
+  let n = 0;
+  const routes = {
+    ...qlooRoutes,
+    '/v2/insights': (u) => {
+      if (u.searchParams.get('filter.type') !== 'urn:entity:artist') return qlooRoutes['/v2/insights'](u);
+      n += 1;
+      return u.searchParams.get('signal.interests.tags') ? ok({ results: { entities: [] } }) : qlooRoutes['/v2/insights'](u);
+    },
+  };
+  const r = await recommend({ artists: [{ name: 'Adele' }], apiKey: 'k', fetchImpl: router(routes) });
+  assert.equal(r.source, 'qloo');
+  assert.ok(n >= 2);
 });
 
 test('no key means labelled sample data, never presented as live', async () => {
@@ -99,4 +141,21 @@ test('input cleaning trims, dedupes, caps and ignores junk', () => {
   assert.deepEqual(cleanList(['  Sinach ', 'sinach', 5, '', 'A', 'B', 'C'], 3), ['Sinach', 'A', 'B']);
   assert.deepEqual(cleanList('nope', 3), []);
   assert.deepEqual(cleanArtists(['Sinach', { name: 'sinach', id: 'x' }, { name: 'Mercy', id: 'm1' }, 7, null]), [{ name: 'Sinach' }, { name: 'Mercy', id: 'm1' }]);
+});
+
+test('AUDIT: third-party image URLs must be https (no javascript:, data:, or http:)', async () => {
+  const routes = {
+    ...qlooRoutes,
+    '/v2/insights': (u) => {
+      if (u.searchParams.get('filter.type') !== 'urn:entity:artist') return qlooRoutes['/v2/insights'](u);
+      return ok({ results: { entities: [
+        { entity_id: 'x1', name: 'A One', properties: { image: { url: 'javascript:alert(1)' } } },
+        { entity_id: 'x2', name: 'B Two', properties: { image: { url: 'http://insecure/a.jpg' } } },
+        { entity_id: 'x3', name: 'C Three', properties: { image: { url: 'https://ok.example/c.jpg' } } },
+      ] } });
+    },
+  };
+  const r = await recommend({ artists: [{ name: 'Sinach' }], apiKey: 'k', fetchImpl: router(routes) });
+  assert.deepEqual(r.picks.map((p) => p.image), [null, null, 'https://ok.example/c.jpg']);
+  assert.deepEqual(r.signature, []);
 });

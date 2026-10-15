@@ -16,7 +16,7 @@ export const qlooRoutes = {
     const name = u.searchParams.get('query');
     return ok({ results: [{ entity_id: `id-${name}`, name, tags: [{ name: 'gospel' }] }] });
   },
-  '/v2/tags': (u) => ok({ results: { tags: [{ id: `tag-${u.searchParams.get('filter.query')}`, name: u.searchParams.get('filter.query') }] } }),
+  '/v2/tags': (u) => ok({ results: { tags: [{ tag_id: `urn:tag:genre:music:${u.searchParams.get('filter.query')}`, name: u.searchParams.get('filter.query') }] } }),
   '/v2/insights': (u) => {
     const type = u.searchParams.get('filter.type');
     if (type === 'urn:entity:podcast') return ok({ results: { entities: [{ entity_id: 'p1', name: 'Morning Grace', query: { affinity: 0.7 } }] } });
@@ -29,6 +29,20 @@ export const qlooRoutes = {
           { entity_id: 'a3', name: 'Minister Prudence', query: { affinity: 0.8 } }, // a seed: must be dropped
         ],
       },
+    });
+  },
+};
+
+export const itunesRoutes = {
+  '/search': (u) => {
+    const artist = u.searchParams.get('term');
+    return ok({
+      results: [
+        { kind: 'song', trackId: 1, trackName: `${artist} Song One`, artistName: artist, collectionName: 'Album', artworkUrl100: 'https://img/100x100.jpg', previewUrl: 'https://audio/1.m4a', trackViewUrl: 'https://music.apple.com/1' },
+        { kind: 'song', trackId: 2, trackName: `${artist} Song Two (Karaoke Version)`, artistName: artist, previewUrl: 'https://audio/2.m4a' },
+        { kind: 'song', trackId: 3, trackName: 'Someone Elses Song', artistName: 'Totally Different Artist', previewUrl: 'https://audio/3.m4a' },
+        { kind: 'song', trackId: 4, trackName: 'Bad Preview', artistName: artist, previewUrl: 'http://insecure/4.m4a' },
+      ],
     });
   },
 };

@@ -17,8 +17,8 @@ export async function GET(request) {
   try {
     const list = await createQlooClient({ apiKey: key }).searchEntities(q, 'artist', 6);
     return Response.json({ results: list.map(slim), source: 'qloo' }, { headers: { 'Cache-Control': 'private, max-age=60' } });
-  } catch {
-    return Response.json({ results: [], source: 'error' });
+  } catch (err) {
+    return Response.json({ results: [], source: 'error', message: err.message || 'Qloo search failed.' });
   }
 }
 
