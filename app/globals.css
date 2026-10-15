@@ -225,3 +225,6 @@ textarea:focus, input[type="text"]:focus, select:focus, button:focus-visible, a:
 @media (prefers-reduced-motion: reduce) {
   .orb.in, .orb.out { transition: none; }
 }
+
+.mode.theme { margin-top: 6px; }
+.mode.theme .mode-opt span { text-align: center; padding: 14px; }

@@ -2,12 +2,12 @@ import './globals.css';
 
 export const metadata = {
   title: 'Batus',
-  description: "When your mind won't stop, Batus plays your own kind of praise music, found through Qloo's taste graph.",
+  description: "When your mind won't stop or your heart is hurting, Batus finds your own kind of music through Qloo's taste graph.",
   applicationName: 'Batus',
   appleWebApp: { capable: true, title: 'Batus', statusBarStyle: 'black-translucent' },
   openGraph: {
     title: 'Batus',
-    description: "When your mind won't stop, your own praise music answers first.",
+    description: "When your mind won't stop or your heart is hurting, your own music answers first.",
     type: 'website',
   },
 };

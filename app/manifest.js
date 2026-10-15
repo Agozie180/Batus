@@ -2,7 +2,7 @@ export default function manifest() {
   return {
     name: 'Batus',
     short_name: 'Batus',
-    description: "When your mind won't stop, your own praise music answers first.",
+    description: "When your mind won't stop or your heart is hurting, your own music answers first.",
     start_url: '/',
     display: 'standalone',
     background_color: '#1b1636',

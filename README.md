@@ -1,12 +1,19 @@
-# Batus: when your mind won't stop, your own praise music answers first
+# Batus: when your mind won't stop or your heart is hurting, your own music answers first
 
 **Links:** Live demo: _add your Vercel URL after deploy_ · Repo: [github.com/Agozie180/Batus](https://github.com/Agozie180/Batus) · Built for the [Qloo Agentic Hackathon](https://qloo.devpost.com/)
 
 > **Batus never invents music. It picks from the Qloo taste graph by ID, and the code throws away anything that did not come back from Qloo or from the person's own list.**
 
-Overthinking and worry don't arrive on a schedule. After a result you hoped for doesn't come, or when money and food feel uncertain, generic advice ("go for a walk", "try calming music") rarely sticks. What does help many people is *their own* music. Batus takes one tap, asks how you feel, and puts your kind of praise and worship music in front of you, local and international, with a link to play it right now. It then goes a step further and suggests something to listen to or watch from the same taste.
+Overthinking and worry don't arrive on a schedule. After a result you hoped for doesn't come, or when money and food feel uncertain, generic advice ("go for a walk", "try calming music") rarely sticks. What does help many people is *their own* music. Batus takes one tap, asks what you are going through, and puts your kind of music in front of you with a link to play it right now. Two situations are supported today:
 
-**Who it is for:** people in hard seasons, especially listeners of Nigerian and international gospel, whose taste generic playlists and LLM answers rarely reflect.
+| Going through | Modes | What Batus asks Qloo for |
+|---|---|---|
+| **Worry & overthinking** | *Calm me* (slow worship) · *Lift me up* (praise, dance) | Gospel + worship or praise taste, so praise and worship from Nigeria and abroad |
+| **Heartbreak** (a breakup, from either side) | *Let it out* (sad songs to feel and cry to) · *Move on* (uplifting, own your worth) | Heartbreak or uplifting taste, in **any genre** your seed artists point to (Afrobeats, R&B, gospel for healing...) |
+
+It then goes a step further and suggests something to listen to or watch from the same taste.
+
+**Who it is for:** people in hard seasons, such as worry about money and results or the end of a relationship, whose taste (often Nigerian and international gospel, Afrobeats, R&B) generic playlists and LLM answers rarely reflect.
 
 ## Why Qloo is the difference
 
@@ -53,14 +60,15 @@ Overthinking and worry don't arrive on a schedule. After a result you hoped for 
 |---|---|
 | Which artists, podcasts and shows to show, from Qloo results plus your own list | Showing anything else. `assertGrounded` throws; the agent's chosen IDs are filtered against what its own tool calls returned (tested) |
 | What to say, via Claude or fixed templates | Naming music in that message. A message that contains a Qloo result's name is discarded and replaced by template wording (tested) |
-| Whether to pause for safety | Running any music logic or calling Claude after crisis language is detected (tested: neither Qloo nor Claude is called) |
+| Whether to pause for safety | Running any music logic or calling Claude after crisis language is detected (tested: neither Qloo nor Claude is called). Heartbreak raises risk, so phrases like "can't live without her" and "I just want the pain to stop" also trip the gate |
+| What a heartbreak message may say | Urging contact with an ex, blaming anyone, or promising it will be okay (templates tested; the agent prompt forbids it) |
 | Which artists count as "yours" | Echoing them back as recommendations |
 
 ## Measured
 
 | Claim | Result | Reproduce with |
 |---|---|---|
-| Behaviour tests (crisis gate, Qloo client, fallbacks, agent loop, grounding) | 26 / 26 passing | `npm test` |
+| Behaviour tests (crisis gate, Qloo client, fallbacks, agent loop, grounding) | 34 / 34 passing | `npm test` |
 | Production build | Passes, 0 known dependency vulnerabilities | `npm run build && npm audit` |
 | End-to-end over real HTTP: UI → API → agent → Qloo/Claude tools → UI | Exercised against a local stand-in for both services | see Limitations |
 | Qloo coverage of Nigerian and international gospel artists | **Not measured yet** | `QLOO_API_KEY=… npm run coverage` writes `COVERAGE.md` |
@@ -80,6 +88,7 @@ npm test
 ```
 
 Things to try:
+0. Switch between **Worry & overthinking** and **Heartbreak**. Each keeps its own saved sound, and the mood tags sent to Qloo change.
 1. Type "Sinach" in *Favourite artists*. Suggestions come live from Qloo, with a photo when Qloo has one.
 2. Choose **Calm me**, then **Lift me up** with the same artists and open *How this was chosen* to see the mood tag change.
 3. Set **Near** to a city and compare the matches.
@@ -101,6 +110,7 @@ Without `QLOO_API_KEY` the app runs in **sample mode**: a small fixed list, labe
 - Qloo returns artists, shows and podcasts, not tracks. Playback is a platform search link, so the first result may not be the exact song you want.
 - The AI agent's wording is instructed and checked (its message is discarded if it names a Qloo result) but it is still model-written text. Picks are structurally grounded; prose is only guarded.
 - When the Claude writer is on, your check-in text is sent to Claude to compose the reply. You can turn it off in the app. Crisis text is never sent.
+- Heartbreak taste tags (`heartbreak`, `sad`, `uplifting`, `empowering`) are looked up in Qloo at run time. Which tags Qloo actually has is unverified until a real key is used; if none resolve, Batus falls back to your seed artists alone.
 - The crisis screen is a conservative keyword check, not a clinical assessment. It can miss indirect wording and can show on harmless phrases.
 - Rate limiting is best-effort per serverless instance.
 

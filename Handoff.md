@@ -8,7 +8,7 @@ A comfort companion for people who overthink and worry. One tap, optional check-
 Thesis: Batus never invents music. Picks are chosen by Qloo ID and anything not returned by Qloo (or the person's own list) is dropped. Enforced in `lib/recommend.js` (`assertGrounded`) and `lib/agent.js` (`finalize`).
 
 ## Status (15 Oct 2026)
-- Done: Next.js app, live Qloo artist typeahead, Claude agent with Qloo tools (optional), mood tags (worship/praise), location signal, podcast + TV extras, crisis gate, breathing exercise, saved taste profile, PWA manifest and icons, 26 passing tests, README, MIT license, `npm run coverage` script.
+- Done: two themes (Worry & overthinking, Heartbreak) with Calm/Lift and Let it out/Move on modes, per-theme saved sound, Next.js app, live Qloo artist typeahead, Claude agent with Qloo tools (optional), mood tags (worship/praise), location signal, podcast + TV extras, crisis gate, breathing exercise, saved taste profile, PWA manifest and icons, 34 passing tests, README, MIT license, `npm run coverage` script.
 - Repo: https://github.com/Agozie180/Batus (public).
 - **Not deployed yet. The real Qloo and Claude APIs have never been called from this build** (only local stand-ins). That is the biggest risk left.
 
@@ -17,7 +17,7 @@ Thesis: Batus never invents music. Picks are chosen by Qloo ID and anything not 
 npm install
 cp .env.example .env.local     # QLOO_API_KEY (required for live), ANTHROPIC_API_KEY (optional agent)
 npm run dev                    # http://localhost:3000
-npm test                       # 26 tests, no network needed
+npm test                       # 34 tests, no network needed
 ```
 
 ## Layout
@@ -28,16 +28,18 @@ npm test                       # 26 tests, no network needed
 - `lib/recommend.js` deterministic pipeline + grounding + extras
 - `lib/agent.js` Claude tool-use loop (find_artist, taste_matches, finish)
 - `lib/praise.js` orchestrator (gate → agent → fallback)
+- `lib/themes.js` theme/mode model, Qloo tag keywords per mode, repairs bad client input
 - `lib/companion.js` template wording, `lib/links.js` play links, `lib/sample.js` labelled sample data
 - `scripts/coverage.mjs` checks Qloo's coverage of gospel artists, writes `COVERAGE.md`
 
 ## Next steps, in order
 1. Get a Qloo API key (link in `.env.example`). Run `npm run dev`, tap the big button, open "How this was chosen". Fix any field-name mismatches in `lib/qloo.js` (`readList` / `toEntity`). Check that `signal.location.query` and tag filters are accepted (the code falls back if not).
-2. Run `npm run coverage`, commit `COVERAGE.md`, and quote the real number in the README.
-3. Add `ANTHROPIC_API_KEY`, confirm the agent works (badge "Claude agent" appears) and the model name in `.env.example` is valid for your account.
-4. Deploy on Vercel (import repo, add env vars), check `/api/health`, put the live URL in the README links line and on Devpost.
-5. Confirm the MIT license shows in the repo's About section and the repo is public.
-6. Write the Devpost description from the README (problem, who it is for, what is Qloo-powered, limits). Submit with time to spare.
+2. In the live run, check which heartbreak tags Qloo resolves (`heartbreak`, `sad`, `uplifting`, `empowering`; see the trace) and adjust `MODE_INFO` in `lib/themes.js` if they miss.
+3. Run `npm run coverage` (add a few Afrobeats/R&B artists too), commit `COVERAGE.md`, and quote the real number in the README.
+4. Add `ANTHROPIC_API_KEY`, confirm the agent works (badge "Claude agent" appears) and the model name in `.env.example` is valid for your account.
+5. Deploy on Vercel (import repo, add env vars), check `/api/health`, put the live URL in the README links line and on Devpost.
+6. Confirm the MIT license shows in the repo's About section and the repo is public.
+7. Write the Devpost description from the README (problem, who it is for, what is Qloo-powered, limits). Submit with time to spare.
 
 ## Rules for this repo
 - Commits and pushes authored by Agozie180 only (email `137266828+Agozie180@users.noreply.github.com`). No Co-Authored-By or Claude trailers.

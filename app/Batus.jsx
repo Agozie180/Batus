@@ -6,18 +6,44 @@ const KEY = 'batus.profile.v2';
 const MAX_ARTISTS = 6;
 const MAX_SONGS = 5;
 
-const STARTERS = {
-  ng: ['Minister Prudence', 'Nathaniel Bassey', 'Sinach', 'Mercy Chinwo'],
-  intl: ['The Belonging Co', 'Elevation Worship', 'Maverick City Music', 'Hillsong Worship'],
-  both: ['Minister Prudence', 'Nathaniel Bassey', 'The Belonging Co', 'Elevation Worship'],
+const THEMES = {
+  worry: {
+    label: 'Worry & overthinking',
+    placeholder: "Results came out and I can't stop worrying about money and food...",
+    quick: [
+      ['Results came out', "The results were announced and I didn't win."],
+      ['Money & food', "I'm worried about money and what I'll eat."],
+      ["Can't sleep", "I can't sleep and my mind won't stop."],
+      ['Overthinking', "I'm just overthinking everything."],
+    ],
+    modes: [['calm', 'Calm me', 'Slow worship, breathe'], ['dance', 'Lift me up', 'Praise, stand and dance']],
+    soundHint: "Artists you reach for when you need peace. Batus uses Qloo's taste graph to find more like them.",
+    starters: [
+      ['Nigerian gospel', ['Minister Prudence', 'Nathaniel Bassey', 'Sinach', 'Mercy Chinwo'], 'Lagos'],
+      ['Worship (international)', ['The Belonging Co', 'Elevation Worship', 'Maverick City Music', 'Hillsong Worship'], ''],
+      ['Both', ['Minister Prudence', 'Nathaniel Bassey', 'The Belonging Co', 'Elevation Worship'], ''],
+    ],
+  },
+  heartbreak: {
+    label: 'Heartbreak',
+    placeholder: 'We broke up and I keep replaying everything...',
+    quick: [
+      ['She left me', 'She broke up with me and I cannot stop thinking about it.'],
+      ['I ended it', 'I ended the relationship, and I still feel terrible.'],
+      ['I miss them', 'I still miss them so much.'],
+      ['Betrayed', 'I was cheated on and I feel betrayed.'],
+    ],
+    modes: [['release', 'Let it out', 'Sad songs you can feel and cry to'], ['heal', 'Move on', 'Songs that lift you and own your worth']],
+    soundHint: 'Artists whose songs you play when your heart hurts. Any genre. Batus uses Qloo to find heartbreak songs that match your taste.',
+    starters: [
+      ['Afrobeats & R&B', ['Tems', 'Ayra Starr', 'Adekunle Gold', 'Simi'], 'Lagos'],
+      ['Gospel for healing', ['Nathaniel Bassey', 'Mercy Chinwo', 'Sinach', 'Dunsin Oyekan'], 'Lagos'],
+      ['Soulful mix', ['Johnny Drille', 'Tiwa Savage', 'Burna Boy', 'Tems'], 'Lagos'],
+    ],
+  },
 };
 
-const QUICK = [
-  ['Results came out', "The results were announced and I didn't win."],
-  ['Money & food', "I'm worried about money and what I'll eat."],
-  ["Can't sleep", "I can't sleep and my mind won't stop."],
-  ['Overthinking', "I'm just overthinking everything."],
-];
+const defaultProfile = (theme) => ({ artists: THEMES[theme].starters[0][1].map((name) => ({ name })), songs: [], location: THEMES[theme].starters[0][2] });
 
 const CITIES = ['', 'Lagos', 'Abuja', 'Port Harcourt', 'Enugu', 'Ibadan', 'Kano', 'Accra', 'London', 'Houston'];
 
@@ -33,10 +59,12 @@ const SOURCE_LABEL = {
 
 export default function Batus() {
   const [text, setText] = useState('');
+  const [theme, setTheme] = useState('worry');
   const [mode, setMode] = useState('calm');
-  const [artists, setArtists] = useState(STARTERS.both.map((name) => ({ name })));
+  const [artists, setArtists] = useState(() => defaultProfile('worry').artists);
   const [songs, setSongs] = useState([]);
   const [location, setLocation] = useState('');
+  const profiles = useRef({}); // per-theme sound, so a heartbreak playlist never overwrites a worship one
   const [useAi, setUseAi] = useState(true);
   const [health, setHealth] = useState(null);
 
@@ -50,11 +78,16 @@ export default function Batus() {
   useEffect(() => {
     try {
       const saved = JSON.parse(localStorage.getItem(KEY) || 'null');
-      if (saved) {
-        if (Array.isArray(saved.artists) && saved.artists.length) setArtists(saved.artists.slice(0, MAX_ARTISTS));
-        if (Array.isArray(saved.songs)) setSongs(saved.songs.slice(0, MAX_SONGS));
-        if (typeof saved.location === 'string') setLocation(saved.location);
-        if (saved.mode === 'dance' || saved.mode === 'calm') setMode(saved.mode);
+      if (saved && saved.profiles) {
+        profiles.current = saved.profiles;
+        const t = THEMES[saved.theme] ? saved.theme : 'worry';
+        const p = saved.profiles[t] || defaultProfile(t);
+        setTheme(t);
+        setArtists((p.artists || []).slice(0, MAX_ARTISTS));
+        setSongs((p.songs || []).slice(0, MAX_SONGS));
+        setLocation(typeof p.location === 'string' ? p.location : '');
+        if (THEMES[t].modes.some(([m]) => m === saved.mode)) setMode(saved.mode);
+        else setMode(THEMES[t].modes[0][0]);
       }
     } catch { /* storage unavailable: fine */ }
     fetch('/api/health').then((r) => r.json()).then(setHealth).catch(() => {});
@@ -63,8 +96,22 @@ export default function Batus() {
   const loaded = useRef(false);
   useEffect(() => {
     if (!loaded.current) { loaded.current = true; return; }
-    try { localStorage.setItem(KEY, JSON.stringify({ artists, songs, location, mode })); } catch { /* ignore */ }
-  }, [artists, songs, location, mode]);
+    profiles.current[theme] = { artists, songs, location };
+    try { localStorage.setItem(KEY, JSON.stringify({ theme, mode, profiles: profiles.current })); } catch { /* ignore */ }
+  }, [artists, songs, location, mode, theme]);
+
+  function switchTheme(next) {
+    if (next === theme) return;
+    profiles.current[theme] = { artists, songs, location };
+    const p = profiles.current[next] || defaultProfile(next);
+    setTheme(next);
+    setMode(THEMES[next].modes[0][0]);
+    setArtists(p.artists);
+    setSongs(p.songs || []);
+    setLocation(p.location || '');
+    setResult(null);
+    setError('');
+  }
 
   const flash = useCallback((msg) => {
     setToast(msg);
@@ -90,6 +137,7 @@ export default function Batus() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           text,
+          theme,
           mode,
           location,
           ai: useAi,
@@ -116,7 +164,7 @@ export default function Batus() {
       <main className="wrap">
         <header className="top">
           <h1 className="brand">Batus</h1>
-          <p className="tag">When your mind won&apos;t stop, let your own praise music answer first.</p>
+          <p className="tag">When your mind won&apos;t stop or your heart is hurting, let your own music answer first.</p>
           {health && (
             <div className="status-pills" aria-label="Service status">
               <span className={`pill ${health.qloo ? 'on' : 'warn'}`}>{health.qloo ? 'Qloo live' : 'Sample mode'}</span>
@@ -124,6 +172,18 @@ export default function Batus() {
             </div>
           )}
         </header>
+
+        <section className="card" aria-labelledby="h-theme">
+          <h2 id="h-theme">What are you going through?</h2>
+          <div className="mode theme" role="radiogroup" aria-label="What are you going through?">
+            {Object.entries(THEMES).map(([key, t]) => (
+              <label className="mode-opt" key={key}>
+                <input type="radio" name="theme" value={key} checked={theme === key} onChange={() => switchTheme(key)} />
+                <span><b>{t.label}</b></span>
+              </label>
+            ))}
+          </div>
+        </section>
 
         <section className="card" aria-labelledby="h-checkin">
           <h2 id="h-checkin">What&apos;s on your mind?</h2>
@@ -133,35 +193,33 @@ export default function Batus() {
             onChange={(e) => setText(e.target.value)}
             rows={3}
             maxLength={1000}
-            placeholder="Results came out and I can't stop worrying about money and food..."
+            placeholder={THEMES[theme].placeholder}
             aria-label="What's on your mind"
           />
           <div className="chips" role="group" aria-label="Quick starts">
-            {QUICK.map(([label, value]) => (
+            {THEMES[theme].quick.map(([label, value]) => (
               <button key={label} type="button" className="chip" onClick={() => setText(value)}>{label}</button>
             ))}
           </div>
           <div className="mode" role="radiogroup" aria-label="How do you want to feel?">
-            <label className="mode-opt">
-              <input type="radio" name="mode" value="calm" checked={mode === 'calm'} onChange={() => setMode('calm')} />
-              <span><b>Calm me</b><small>Slow worship, breathe</small></span>
-            </label>
-            <label className="mode-opt">
-              <input type="radio" name="mode" value="dance" checked={mode === 'dance'} onChange={() => setMode('dance')} />
-              <span><b>Lift me up</b><small>Praise, stand and dance</small></span>
-            </label>
+            {THEMES[theme].modes.map(([key, label, hint]) => (
+              <label className="mode-opt" key={key}>
+                <input type="radio" name="mode" value={key} checked={mode === key} onChange={() => setMode(key)} />
+                <span><b>{label}</b><small>{hint}</small></span>
+              </label>
+            ))}
           </div>
         </section>
 
         <section className="card" aria-labelledby="h-sound">
           <h2 id="h-sound">Your sound</h2>
-          <p className="hint">Artists you reach for when you need peace. Batus uses Qloo&apos;s taste graph to find more like them.</p>
+          <p className="hint">{THEMES[theme].soundHint}</p>
 
           <div className="presets">
             <span className="lbl">Try a starter:</span>
-            <button type="button" className="chip ghost" onClick={() => { setArtists(STARTERS.ng.map((name) => ({ name }))); setLocation('Lagos'); }}>Nigerian gospel</button>
-            <button type="button" className="chip ghost" onClick={() => setArtists(STARTERS.intl.map((name) => ({ name })))}>Worship (international)</button>
-            <button type="button" className="chip ghost" onClick={() => setArtists(STARTERS.both.map((name) => ({ name })))}>Both</button>
+            {THEMES[theme].starters.map(([label, names, city]) => (
+              <button key={label} type="button" className="chip ghost" onClick={() => { setArtists(names.map((name) => ({ name }))); if (city) setLocation(city); }}>{label}</button>
+            ))}
           </div>
 
           <label className="field-label" htmlFor="artist-in">Favourite artists</label>
@@ -357,7 +415,7 @@ function Result({ data, mode, savedNames, onSave }) {
         <p className="opener">{data.message.opener}</p>
         {data.message.topic && <p>{data.message.topic}</p>}
         {data.message.after && <p className="after">{data.message.after}</p>}
-        {mode === 'calm' && !breathing && (
+        {(mode === 'calm' || mode === 'release') && !breathing && (
           <button type="button" className="chip" onClick={() => setBreathing(true)}>Take 4 slow breaths first</button>
         )}
         {breathing && <Breathe onDone={() => setBreathing(false)} />}
