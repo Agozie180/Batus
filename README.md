@@ -1,6 +1,6 @@
 # Batus: when your mind won't stop or your heart is hurting, your own music answers first
 
-[![CI](https://github.com/Agozie180/Batus/actions/workflows/ci.yml/badge.svg)](https://github.com/Agozie180/Batus/actions/workflows/ci.yml) ![tests](https://img.shields.io/badge/tests-57%20passing-brightgreen) ![license](https://img.shields.io/badge/license-MIT-blue) ![Qloo](https://img.shields.io/badge/powered%20by-Qloo-f2b04c)
+[![CI](https://github.com/Agozie180/Batus/actions/workflows/ci.yml/badge.svg)](https://github.com/Agozie180/Batus/actions/workflows/ci.yml) ![tests](https://img.shields.io/badge/tests-61%20passing-brightgreen) ![license](https://img.shields.io/badge/license-MIT-blue) ![Qloo](https://img.shields.io/badge/powered%20by-Qloo-f2b04c)
 
 | | |
 |---|---|
@@ -73,7 +73,7 @@ It then goes a step further and suggests something to listen to or watch from th
 |---|---|
 | Which artists, podcasts and shows to show, from Qloo results plus your own list | Showing anything else. `assertGrounded` throws; the agent's chosen IDs are filtered against what its own tool calls returned (tested) |
 | What to say, via Claude or fixed templates | Naming music in that message. A message that contains a Qloo result's name is discarded and replaced by template wording (tested) |
-| Whether to pause for safety | Running any music logic or calling Claude after crisis language is detected (tested: neither Qloo nor Claude is called). Heartbreak raises risk, so phrases like "can't live without her" and "I just want the pain to stop" also trip the gate |
+| Whether to pause for safety | Running any music logic or calling Claude after crisis language is detected (tested: neither Qloo nor Claude is called). Heartbreak raises risk, so death wishes ("I wish for death", slang, disguised spellings), "can't live without her" and "I just want the pain to stop" also trip the gate, in any input field; and if Claude judges the words worrying it can raise the same screen itself (tested) |
 | What a heartbreak message may say | Urging contact with an ex, blaming anyone, or promising it will be okay (templates tested; the agent prompt forbids it) |
 | Which artists count as "yours" | Echoing them back as recommendations |
 
@@ -81,7 +81,7 @@ It then goes a step further and suggests something to listen to or watch from th
 
 | Claim | Result | Reproduce with |
 |---|---|---|
-| Behaviour tests (crisis gate, Qloo client, fallbacks, agent loop, grounding) | 57 / 57 passing | `npm test` |
+| Behaviour tests (crisis gate, Qloo client, fallbacks, agent loop, grounding) | 61 / 61 passing | `npm test` |
 | Production build | Passes, 0 known dependency vulnerabilities | `npm run build && npm audit` |
 | End-to-end over real HTTP: UI → API → agent → Qloo/Claude tools → UI | Exercised against a local stand-in for both services | see Limitations |
 | Self-audit: findings fixed and pinned by tests | 7 findings, see [AUDIT.md](./AUDIT.md) | `npm test` |

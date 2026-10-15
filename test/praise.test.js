@@ -78,3 +78,35 @@ test('cleanLocation allows city names and strips everything else', () => {
   assert.equal(cleanLocation("Lagos<script>alert(1)</script>"), 'Lagosscriptalertscript');
   assert.equal(cleanLocation(42), '');
 });
+
+test('SAFETY: death wishes, slang and disguised spellings stop the music (no Qloo, no Claude)', async () => {
+  const phrases = ['I wish for death', 'i wish i was dead', 'I want death', 'I wanna dieee', 'k1ll myself', 'I wish I would just not wake up', "I'm tired of living", 'I hope I die', 'kms', 'she left and I wish to die', 'I can’t go on'];
+  for (const t of phrases) {
+    let calls = 0;
+    const out = await handlePraise({ text: t, artists: [{ name: 'Adele' }], mode: 'release' }, { apiKey: 'k', anthropicKey: 'a', fetchImpl: async () => { calls += 1; throw new Error('should not be called'); } });
+    assert.equal(out.crisis, true, t);
+    assert.equal(calls, 0, t);
+    assert.ok(out.resources.length > 0);
+  }
+});
+
+test('SAFETY: ordinary figures of speech and heartbreak do not trip the gate', () => {
+  for (const t of ["I'd die for this song", "I'm dying of laughter", 'this deadline is killing me', 'I wish for a miracle', 'I wish I was home', 'She broke up with me and I cannot stop thinking about it.']) {
+    assert.equal(detectCrisis(t), false, t);
+  }
+});
+
+test('SAFETY: crisis words in the songs or artists fields are caught too', async () => {
+  const out = await handlePraise({ text: '', songs: ['I want to kill myself'], artists: [] }, { apiKey: '', anthropicKey: '' });
+  assert.equal(out.crisis, true);
+});
+
+test('SAFETY backstop: if Claude flags concern the person gets the crisis screen, not songs', async () => {
+  const routes = {
+    ...qlooRoutes,
+    'itunes.apple.com/search': (u) => ok({ results: [{ kind: 'song', trackId: 1, trackName: 'T', artistName: u.searchParams.get('term'), previewUrl: 'https://a/p.m4a' }] }),
+    'api.anthropic.com/v1/messages': () => ok({ content: [{ type: 'tool_use', name: 'choose_songs', input: { concern: true, songs: [] } }] }),
+  };
+  const out = await handlePraise({ text: 'nothing matters to me now, I am done with everything', artists: [], mode: 'release' }, { apiKey: 'k', anthropicKey: 'a', fetchImpl: router(routes) });
+  assert.equal(out.crisis, true);
+});
