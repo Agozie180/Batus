@@ -25,6 +25,7 @@ export default function Batus() {
   const [error, setError] = useState('');
   const [result, setResult] = useState(null);
   const [toast, setToast] = useState('');
+  const [phase, setPhase] = useState('');
   const [playlists, setPlaylists] = useState({});
   const player = usePlayer();
   const outRef = useRef(null);
@@ -107,15 +108,25 @@ export default function Batus() {
     setLocation(p.location || '');
     setResult(null);
     setError('');
+    setText('');
   }
 
   async function go() {
     setLoading(true);
     setError('');
     setResult(null);
+    setPhase('Reading your artists in Qloo...');
+    const timers = [
+      setTimeout(() => setPhase('Finding the sound that fits how you feel...'), 3500),
+      setTimeout(() => setPhase('Choosing songs for what you are going through...'), 8000),
+      setTimeout(() => setPhase('Still working. Qloo can be slow sometimes, thank you for waiting.'), 16000),
+    ];
+    const ctrl = new AbortController();
+    const abort = setTimeout(() => ctrl.abort(), 40000);
     requestAnimationFrame(() => outRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
     try {
       const res = await fetch('/api/praise', {
+        signal: ctrl.signal,
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -129,8 +140,14 @@ export default function Batus() {
       setResult(data);
       requestAnimationFrame(() => outRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
     } catch (err) {
-      setError(err.message || 'Something went wrong. Please try again.');
+      setError(err.name === 'AbortError'
+        ? 'This is taking too long. Qloo may be slow right now.'
+        : err instanceof TypeError
+          ? 'Could not reach Batus. Check your connection.'
+          : (err.message || 'Something went wrong.'));
     } finally {
+      timers.forEach(clearTimeout);
+      clearTimeout(abort);
       setLoading(false);
     }
   }
@@ -171,7 +188,7 @@ export default function Batus() {
           <textarea value={text} onChange={(e) => setText(e.target.value)} rows={3} maxLength={1000} placeholder={T.placeholder} aria-label="What's on your mind" />
           <div className="chips" role="group" aria-label="Quick starts">
             {T.quick.map(([label, value]) => (
-              <button key={label} type="button" className="chip" onClick={() => setText(value)}>{label}</button>
+              <button key={label} type="button" className={`chip${text === value ? ' on' : ''}`} aria-pressed={text === value} onClick={() => setText(text === value ? '' : value)}>{label}</button>
             ))}
           </div>
           <div className="mode" role="radiogroup" aria-label="How do you want to feel?">
@@ -226,11 +243,13 @@ export default function Batus() {
         <button className="go" type="button" onClick={go} disabled={loading}>
           {loading ? 'Asking Qloo for your music...' : 'Find my music'}
         </button>
-        <p className="status" role="status" aria-live="polite">{error}</p>
+        <div className="status" role="alert">
+          {error && (<><span>{error}</span> <button type="button" className="chip retry" onClick={go}>Try again</button></>)}
+        </div>
         <p className="toast" role="status" aria-live="polite">{toast}</p>
 
         <div ref={outRef} className="out-anchor">
-          {loading && <Skeleton />}
+          {loading && <Skeleton phase={phase} />}
           {result && (result.crisis ? <Crisis data={result} /> : (
             <Result
               data={result}
@@ -241,7 +260,7 @@ export default function Batus() {
               playlist={playlists[mode] || []}
               onAddSong={addSong}
               onSave={(p) => { addArtist({ name: p.name, id: p.id, image: p.image || undefined }); flash(`${p.name} added to your sound.`); }}
-              onRestart={() => { setResult(null); topRef.current?.scrollIntoView({ behavior: 'smooth' }); }}
+              onRestart={() => { setResult(null); setText(''); topRef.current?.scrollIntoView({ behavior: 'smooth' }); }}
             />
           ))}
         </div>
@@ -257,13 +276,16 @@ export default function Batus() {
   );
 }
 
-function Skeleton() {
+function Skeleton({ phase }) {
   return (
-    <div className="out" aria-hidden="true">
+    <div className="out" role="status" aria-live="polite">
+      <div className="working"><span className="spinner" aria-hidden="true" /><span>{phase}</span></div>
+      <div aria-hidden="true">
       <div className="skel msg-skel" />
       <div className="skel hero-skel" />
       <div className="skel row-skel" />
       <div className="skel row-skel" />
+      </div>
     </div>
   );
 }

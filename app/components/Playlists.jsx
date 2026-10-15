@@ -10,7 +10,7 @@ function asText(name, songs) {
 
 // Playlists the person builds from what Qloo surfaced. One per mood, saved in this browser only.
 export default function Playlists({ playlists, onRemove, onClear, player, activeMode, flash }) {
-  const entries = Object.values(THEMES).flatMap((t) => t.modes.map(([key, label]) => ({ key, label })));
+  const entries = Object.values(THEMES).flatMap((t) => t.modes.map(([key, label]) => ({ key, label: `${t.short} · ${label}` })));
   const [tab, setTab] = useState(activeMode);
   useEffect(() => { setTab(activeMode); }, [activeMode]);
   const key = entries.some((e) => e.key === tab) ? tab : entries[0].key;

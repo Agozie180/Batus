@@ -107,3 +107,23 @@ test('diagnose says plainly when the key is missing', async () => {
   assert.equal(report.steps[0].ok, false);
   assert.match(report.steps[0].detail, /QLOO_API_KEY/);
 });
+
+test('no-AI reasons come from Qloo (mood tag + taste match), never from a word in the title', async () => {
+  const r = await handlePraise({ artists: [{ name: 'Adele' }], mode: 'release', ai: false }, { apiKey: 'k', anthropicKey: '', fetchImpl: router({ ...routes, 'itunes.apple.com/search': (u) => ok({ results: [{ kind: 'song', trackId: 5, trackName: 'Pour Me Water', artistName: u.searchParams.get('term'), previewUrl: 'https://a/p.m4a' }] }) }) });
+  assert.ok(r.set.length > 0);
+  assert.match(r.set[0].why, /Qloo mood: sad/);
+  assert.doesNotMatch(r.set[0].why, /water/i);
+});
+
+test('an artist Qloo does not know is reported back by name', async () => {
+  const routes2 = { ...routes, '/search': (u) => (u.searchParams.get('query') === 'zzqxv' ? fail(404) : qlooRoutes['/search'](u)) };
+  const r = await handlePraise({ artists: [{ name: 'zzqxv' }, { name: 'Adele' }], mode: 'release', ai: false }, { apiKey: 'k', anthropicKey: '', fetchImpl: router(routes2) });
+  assert.deepEqual(r.unmatched, ['zzqxv']);
+});
+
+test('extra songs are offered beyond the set', async () => {
+  const many = Array.from({ length: 20 }, (_, i) => `Song ${i}`);
+  const r = await pickSet({ picks: [{ type: 'artist', name: 'Adele' }], mode: 'release', fetchImpl: router({ 'itunes.apple.com/search': (u) => ok({ results: many.map((t, i) => ({ kind: 'song', trackId: 700 + i, trackName: t, artistName: u.searchParams.get('term') })) }) }), useCache: false });
+  assert.ok(r.more.length > 0);
+  assert.ok(r.more.every((m) => !r.songs.some((s) => s.id === m.id)));
+});

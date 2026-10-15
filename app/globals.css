@@ -5,7 +5,7 @@
   --card: #2a2253;
   --card-2: #342b63;
   --ink: #f6f1ff;
-  --muted: #bdb5dc;
+  --muted: #d6cff0;
   --accent: #f2b04c;
   --accent-ink: #2a1b00;
   --accent-soft: rgba(242, 176, 76, 0.16);
@@ -121,7 +121,10 @@ textarea:focus, input[type="text"]:focus, select:focus, button:focus-visible, a:
 }
 .tile b, .mode-opt b { display: block; }
 .tile small, .mode-opt small { color: var(--muted); display: block; font-size: 0.8rem; line-height: 1.35; margin-top: 2px; }
-.tile input:checked + span, .mode-opt input:checked + span { border-color: var(--accent); background: var(--accent-soft); }
+.tile input:checked + span, .mode-opt input:checked + span { border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 0 0 1px var(--accent) inset; }
+.tile input:checked + span b::after, .mode-opt input:checked + span b::after { content: " ✓"; color: var(--accent); }
+.chip.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 700; }
+.chip.on::before { content: "✓ "; }
 
 .field-label { display: block; font-weight: 600; margin: 18px 0 8px; font-size: 0.92rem; }
 .opt { color: var(--muted); font-weight: 400; }
@@ -180,8 +183,10 @@ details.sound[open] > summary, details.playlists[open] > summary { margin-bottom
 .go:hover { filter: brightness(1.06); }
 .go:active { transform: scale(0.99); }
 .go[disabled] { opacity: 0.65; cursor: progress; }
-.status { text-align: center; color: var(--rose); min-height: 1.5em; margin: 10px 0 0; }
-.toast { text-align: center; color: var(--good); font-size: 0.9rem; min-height: 1.4em; margin-top: 2px; }
+.status { text-align: center; color: var(--rose); margin: 10px 0 0; }
+.status:empty, .toast:empty { margin: 0; }
+.retry { margin-left: 6px; }
+.toast { text-align: center; color: var(--good); font-size: 0.9rem; margin-top: 2px; }
 
 /* ---------- avatars ---------- */
 .art, .dot { object-fit: cover; background: var(--bg-2); flex: none; }
@@ -196,6 +201,7 @@ details.sound[open] > summary, details.playlists[open] > summary { margin-bottom
 /* ---------- results ---------- */
 .out { margin-top: 20px; }
 .out-anchor { scroll-margin-top: 12px; margin-top: 18px; }
+.out-anchor:empty { margin: 0; }
 .msg {
   background: linear-gradient(160deg, var(--card-2), var(--card));
   border: 1px solid var(--accent-line);
@@ -346,3 +352,19 @@ details.sound[open] > summary, details.playlists[open] > summary { margin-bottom
 .setrow { display: grid; grid-template-columns: 22px 1fr; gap: 8px; align-items: start; }
 .setrow .num { color: var(--accent); font: 700 1rem var(--display); padding-top: 18px; text-align: center; }
 .setbody .why { margin: 6px 4px 4px; color: var(--muted); font-size: 0.88rem; font-style: italic; }
+
+.working { display: flex; align-items: center; gap: 12px; padding: 14px 16px; margin-bottom: 14px; background: var(--card); border: 1px solid var(--accent-line); border-radius: var(--radius); }
+.spinner { width: 20px; height: 20px; flex: none; border-radius: 50%; border: 3px solid var(--accent-soft); border-top-color: var(--accent); animation: spin 0.9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 3s; } }
+.notice { background: var(--accent-soft); border: 1px solid var(--accent-line); border-radius: 14px; padding: 12px 14px; font-size: 0.92rem; margin: 0 0 14px; }
+.songs.more { margin-top: 8px; }
+.chip { min-height: 40px; }
+@media (max-width: 400px) {
+  .wrap { padding: 20px 12px 56px; }
+  .ptabs { gap: 6px; }
+  .ptab { padding: 7px 10px; font-size: 0.82rem; }
+  .mini { font-size: 0.74rem; padding: 6px 8px; }
+  .sum-sub { max-width: 52vw; }
+  .chips { gap: 6px; }
+}

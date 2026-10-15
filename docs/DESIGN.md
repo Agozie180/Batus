@@ -23,7 +23,7 @@ A person in a hard moment, awake and alone with a loud mind: waiting on results,
 | Worry & overthinking | Calm me | calm, ambient, acoustic, worship | slow, breathe |
 | Worry & overthinking | Lift me up | upbeat, dance, feel good | stand and move |
 | Heartbreak | Let it out | heartbreak, sad | feel it, cry if needed |
-| Heartbreak | Move on | uplifting, empowering | own your worth |
+| Heartbreak | Lift me up | uplifting, empowering | own your worth |
 
 Tags are resolved at run time with `/v2/tags`; if a tag does not exist or the query is refused, the pipeline degrades (drop location, then drop tags) instead of failing.
 

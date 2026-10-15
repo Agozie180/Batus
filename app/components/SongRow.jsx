@@ -26,8 +26,9 @@ export default function SongRow({ song, player, inList, onAdd, onRemove }) {
         <small>{song.artist}{song.album ? ` · ${song.album}` : ''}</small>
       </div>
       <div className="sact">
-        <a className="mini" href={links.youtube} target="_blank" rel="noopener noreferrer" title="Open full song on YouTube">YouTube</a>
-        <a className="mini" href={links.spotify} target="_blank" rel="noopener noreferrer" title="Open on Spotify">Spotify</a>
+        {song.url && <a className="mini" href={song.url} target="_blank" rel="noopener noreferrer" title="Open this exact track on Apple Music">Apple Music</a>}
+        <a className="mini" href={links.youtube} target="_blank" rel="noopener noreferrer" title="Search for this song on YouTube">Find on YouTube</a>
+        <a className="mini" href={links.spotify} target="_blank" rel="noopener noreferrer" title="Search for this song on Spotify">Find on Spotify</a>
         {onRemove ? (
           <button type="button" className="mini danger" onClick={() => onRemove(song)} aria-label={`Remove ${song.title} from playlist`}>Remove</button>
         ) : (

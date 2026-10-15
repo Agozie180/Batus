@@ -1,6 +1,6 @@
 # Batus: when your mind won't stop or your heart is hurting, your own music answers first
 
-[![CI](https://github.com/Agozie180/Batus/actions/workflows/ci.yml/badge.svg)](https://github.com/Agozie180/Batus/actions/workflows/ci.yml) ![tests](https://img.shields.io/badge/tests-54%20passing-brightgreen) ![license](https://img.shields.io/badge/license-MIT-blue) ![Qloo](https://img.shields.io/badge/powered%20by-Qloo-f2b04c)
+[![CI](https://github.com/Agozie180/Batus/actions/workflows/ci.yml/badge.svg)](https://github.com/Agozie180/Batus/actions/workflows/ci.yml) ![tests](https://img.shields.io/badge/tests-57%20passing-brightgreen) ![license](https://img.shields.io/badge/license-MIT-blue) ![Qloo](https://img.shields.io/badge/powered%20by-Qloo-f2b04c)
 
 | | |
 |---|---|
@@ -19,7 +19,7 @@ Overthinking and worry don't arrive on a schedule. After a result you hoped for 
 | Going through | Modes | What Batus asks Qloo for |
 |---|---|---|
 | **Worry & overthinking** | *Calm me* · *Lift me up* | Artists matching your taste, nudged by music mood tags Qloo resolves at run time (calm, ambient, acoustic / upbeat, dance, feel good) |
-| **Heartbreak** (a breakup, from either side) | *Let it out* (sad songs to feel) · *Move on* (empowering, uplifting) | The same, with sad / heartbreak / ballad / soul or empowering / uplifting tags |
+| **Heartbreak** (a breakup, from either side) | *Let it out* (sad songs to feel) · *Lift me up* (empowering, uplifting) | The same, with sad / heartbreak / ballad / soul or empowering / uplifting tags |
 
 **No artist is hard-coded.** Every artist comes from the person (typeahead backed by Qloo search) or from Qloo's taste graph, in any genre, language or country. With no seed artists at all, Batus asks Qloo from the mood alone. Batus then builds **a set of real songs for what you are going through**: it pulls tracks by the artists Qloo returned (public iTunes Search API, with 30-second previews) and selects and orders them for your situation. With the Claude key on, Claude reads your check-in and the numbered song list and chooses by id, with a one-line reason per song (an invented id is dropped). Without it, mood words in titles pick them. You can add songs to **your own playlists**, one per mood, saved on your device.
 
@@ -81,7 +81,7 @@ It then goes a step further and suggests something to listen to or watch from th
 
 | Claim | Result | Reproduce with |
 |---|---|---|
-| Behaviour tests (crisis gate, Qloo client, fallbacks, agent loop, grounding) | 54 / 54 passing | `npm test` |
+| Behaviour tests (crisis gate, Qloo client, fallbacks, agent loop, grounding) | 57 / 57 passing | `npm test` |
 | Production build | Passes, 0 known dependency vulnerabilities | `npm run build && npm audit` |
 | End-to-end over real HTTP: UI → API → agent → Qloo/Claude tools → UI | Exercised against a local stand-in for both services | see Limitations |
 | Self-audit: findings fixed and pinned by tests | 7 findings, see [AUDIT.md](./AUDIT.md) | `npm test` |

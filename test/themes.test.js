@@ -26,7 +26,7 @@ test('heartbreak modes use heartbreak tags, not gospel', async () => {
   assert.doesNotMatch(q.params['signal.interests.tags'], /genre:music:upbeat/);
 });
 
-test('"Move on" asks Qloo for uplifting tags', async () => {
+test('"Lift me up" (heartbreak) asks Qloo for uplifting tags', async () => {
   const log = [];
   await recommend({ artists: [{ name: 'Tems' }], mode: 'heal', apiKey: 'k', fetchImpl: router(qlooRoutes, log) });
   const q = log.find((c) => c.path === '/v2/insights' && c.params['filter.type'] === 'urn:entity:artist');

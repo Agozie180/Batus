@@ -84,6 +84,7 @@ function Hero({ p, saved, onSave, player, inList, onAddSong }) {
 
 export default function Result({ data, theme, mode, savedNames, player, playlist, onAddSong, onSave, onRestart }) {
   const [breathing, setBreathing] = useState(false);
+  const [showMore, setShowMore] = useState(false);
   const music = data.picks.filter((p) => p.type === 'artist');
   const [hero, ...rest] = music;
   const beyond = data.extras || [];
@@ -111,6 +112,14 @@ export default function Result({ data, theme, mode, savedNames, player, playlist
         {breathing && <Breathe onDone={() => setBreathing(false)} />}
       </div>
 
+      {data.unmatched?.length > 0 && (
+        <p className="notice" role="status">
+          Qloo doesn&apos;t know {data.unmatched.map((n) => `“${n}”`).join(', ')}, so {data.unmatched.length > 1 ? 'they were' : 'it was'} left out
+          {' '}and these matches are based on {music.length && savedNames.size > data.unmatched.length ? 'your other artists and your mood' : 'your mood alone'}.
+          Check the spelling in <b>Your sound</b>.
+        </p>
+      )}
+
       {data.set?.length > 0 && (
         <section className="set" aria-label="A set for you">
           <h2 className="section-title">{data.setBy === 'claude' ? 'A set chosen for what you are going through' : 'A set matched to your mood'}</h2>
@@ -130,8 +139,23 @@ export default function Result({ data, theme, mode, savedNames, player, playlist
               </div>
             ))}
           </div>
+          {showMore && data.more?.length > 0 && (
+            <div className="songs more">
+              {data.more.map((song) => (
+                <div key={song.id} className="setbody">
+                  <SongRow song={song} player={player} inList={inList(song)} onAdd={onAddSong} />
+                  {song.why && <p className="why">{song.why}</p>}
+                </div>
+              ))}
+            </div>
+          )}
           <div className="pactions">
             <button type="button" className="chip" onClick={() => data.set.filter((x) => !inList(x)).forEach(onAddSong)}>Add the whole set to my playlist</button>
+            {data.more?.length > 0 && (
+              <button type="button" className="chip ghost" aria-expanded={showMore} onClick={() => setShowMore((v) => !v)}>
+                {showMore ? 'Show fewer songs' : `Show ${data.more.length} more songs`}
+              </button>
+            )}
           </div>
         </section>
       )}

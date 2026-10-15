@@ -10,6 +10,7 @@ export const CITIES = ['', 'Lagos', 'Accra', 'Nairobi', 'Johannesburg', 'London'
 
 export const THEMES = {
   worry: {
+    short: 'Worry',
     label: 'Worry & overthinking',
     sub: 'Results, money, the future, a mind that will not switch off',
     placeholder: "I can't stop worrying about money and what's next...",
@@ -33,6 +34,7 @@ export const THEMES = {
     },
   },
   heartbreak: {
+    short: 'Heartbreak',
     label: 'Heartbreak',
     sub: 'A breakup, from either side, and the quiet that follows',
     placeholder: 'We broke up and I keep replaying everything...',
@@ -44,7 +46,7 @@ export const THEMES = {
     ],
     modes: [
       ['release', 'Let it out', 'Sad songs you can feel and cry to'],
-      ['heal', 'Move on', 'Songs that lift you and own your worth'],
+      ['heal', 'Lift me up', 'Songs that own your worth'],
     ],
     soundHint: 'Artists whose songs you play when your heart hurts, in any genre or language. Batus asks Qloo for more like them.',
     park: {

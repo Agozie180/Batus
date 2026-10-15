@@ -14,7 +14,7 @@ When worry or heartbreak hits at night, the usual advice ("go for a walk", "try 
 [Optional: add one or two sentences of your own story here.]
 
 ## What it does
-Batus is a comfort companion with two situations: **worry & overthinking** and **heartbreak**. You say what you are going through, how you want to feel (Calm me, Lift me up, Let it out, Move on), and the artists you love. Batus then:
+Batus is a comfort companion with two situations: **worry & overthinking** and **heartbreak**. You say what you are going through, how you want to feel (Calm me, Lift me up, Let it out, Lift me up), and the artists you love. Batus then:
 - finds taste-matched music through Qloo, with live artist search as you type, mood-aware taste tags, and an optional location signal;
 - adds a podcast and a show from the same taste;
 - shows a **taste signature** and per-artist **match bars** built from Qloo's data;
