@@ -82,7 +82,7 @@ function Hero({ p, saved, onSave, player, inList, onAddSong }) {
   );
 }
 
-export default function Result({ data, theme, mode, savedNames, player, playlist, onAddSong, onSave, onRestart }) {
+export default function Result({ data, theme, mode, savedNames, songsState, onRetrySongs, player, playlist, onAddSong, onSave, onRestart }) {
   const [breathing, setBreathing] = useState(false);
   const [showMore, setShowMore] = useState(false);
   const music = data.picks.filter((p) => p.type === 'artist');
@@ -118,6 +118,13 @@ export default function Result({ data, theme, mode, savedNames, player, playlist
           {' '}and these matches are based on {music.length && savedNames.size > data.unmatched.length ? 'your other artists and your mood' : 'your mood alone'}.
           Check the spelling in <b>Your sound</b>.
         </p>
+      )}
+
+      {!data.set && songsState === 'loading' && (
+        <div className="working"><span className="spinner" aria-hidden="true" /><span role="status">Choosing real songs for what you are going through...</span></div>
+      )}
+      {!data.set && songsState === 'error' && (
+        <p className="notice" role="alert">Your artists are below, but the songs did not load. <button type="button" className="chip" onClick={onRetrySongs}>Try again</button></p>
       )}
 
       {data.set?.length > 0 && (

@@ -26,6 +26,9 @@ export default function Batus() {
   const [result, setResult] = useState(null);
   const [toast, setToast] = useState('');
   const [phase, setPhase] = useState('');
+  const [songsState, setSongsState] = useState('idle');
+  const songsRun = useRef(0);
+  const snap = useRef(null);
   const [playlists, setPlaylists] = useState({});
   const player = usePlayer();
   const outRef = useRef(null);
@@ -106,12 +109,39 @@ export default function Batus() {
     setArtists(p.artists);
     setSongs(p.songs || []);
     setLocation(p.location || '');
+    songsRun.current += 1;
     setResult(null);
     setError('');
     setText('');
   }
 
+  // Phase two: real songs for the artists Qloo returned, chosen for the person's situation.
+  async function loadSongs(data) {
+    const run = ++songsRun.current;
+    setSongsState('loading');
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 35000);
+    try {
+      const res = await fetch('/api/songs', {
+        method: 'POST', signal: ctrl.signal, headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ payload: data.songsPayload, token: data.songsToken, ...snap.current }),
+      });
+      const out = await res.json();
+      if (run !== songsRun.current) return;
+      if (!res.ok) throw new Error(out.error || 'Request failed');
+      if (out.crisis) { setResult(out); setSongsState('idle'); return; }
+      setResult((cur) => (cur && !cur.crisis ? { ...cur, set: out.set, more: out.more, setBy: out.setBy, trace: [...(cur.trace || []), out.note].filter(Boolean) } : cur));
+      setSongsState('done');
+    } catch {
+      if (run === songsRun.current) setSongsState('error');
+    } finally {
+      clearTimeout(t);
+    }
+  }
+
   async function go() {
+    songsRun.current += 1;
+    setSongsState('idle');
     setLoading(true);
     setError('');
     setResult(null);
@@ -130,7 +160,7 @@ export default function Batus() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          text, theme, mode, location, ai: useAi,
+          text, theme, mode, location, ai: useAi, defer: true,
           artists: artists.map(({ name, id }) => ({ name, id })),
           songs,
         }),
@@ -139,6 +169,8 @@ export default function Batus() {
       if (!res.ok) throw new Error(data.error || 'Request failed');
       setResult(data);
       requestAnimationFrame(() => outRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+      snap.current = { text, theme, mode, ai: useAi };
+      if (!data.crisis && data.songsToken) loadSongs(data);
     } catch (err) {
       setError(err.name === 'AbortError'
         ? 'This is taking too long. Qloo may be slow right now.'
@@ -250,8 +282,11 @@ export default function Batus() {
 
         <div ref={outRef} className="out-anchor">
           {loading && <Skeleton phase={phase} />}
+          {result && !result.crisis && result.concernNote && <Crisis data={result.concernNote} soft />}
           {result && (result.crisis ? <Crisis data={result} /> : (
             <Result
+              songsState={songsState}
+              onRetrySongs={() => loadSongs(result)}
               data={result}
               theme={theme}
               mode={mode}
@@ -260,7 +295,7 @@ export default function Batus() {
               playlist={playlists[mode] || []}
               onAddSong={addSong}
               onSave={(p) => { addArtist({ name: p.name, id: p.id, image: p.image || undefined }); flash(`${p.name} added to your sound.`); }}
-              onRestart={() => { setResult(null); setText(''); topRef.current?.scrollIntoView({ behavior: 'smooth' }); }}
+              onRestart={() => { songsRun.current += 1; setResult(null); setText(''); topRef.current?.scrollIntoView({ behavior: 'smooth' }); }}
             />
           ))}
         </div>
@@ -319,9 +354,9 @@ function SongInput({ songs, setSongs }) {
   );
 }
 
-function Crisis({ data }) {
+function Crisis({ data, soft }) {
   return (
-    <section className="crisis" aria-live="assertive">
+    <section className={`crisis${soft ? ' soft' : ''}`} aria-live={soft ? 'polite' : 'assertive'}>
       <h2>{data.title}</h2>
       {data.body.map((p) => <p key={p}>{p}</p>)}
       <p>

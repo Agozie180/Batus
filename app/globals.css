@@ -368,3 +368,6 @@ details.sound[open] > summary, details.playlists[open] > summary { margin-bottom
   .sum-sub { max-width: 52vw; }
   .chips { gap: 6px; }
 }
+
+.crisis.soft { background: var(--accent-soft); border-color: var(--accent-line); margin-bottom: 14px; padding: 16px 18px; }
+.crisis.soft h2 { color: var(--ink); font-size: 1.15rem; margin-top: 0; }
