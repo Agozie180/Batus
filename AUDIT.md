@@ -12,6 +12,14 @@ Findings from reviewing Batus against its own thesis and against common web and 
 | 6 | A model message could name music | Prose could slip in an ungrounded name | Message discarded if it contains any Qloo result's name; template wording used instead | `agent.test.js` "names music" |
 | 7 | Crisis detection missed heartbreak-adjacent phrasing | A person in acute distress getting a song suggestion | Added "can't live without", "nothing to live for", "life is over", "want the pain to stop" | `themes.test.js` safety gate |
 
+## Round 9 findings (16 Oct 2026)
+
+| # | Finding | Fix | Pinned by |
+|---|---|---|---|
+| 8 | Songs were always the same: pool was each artist's top hits, own artists excluded, fixed ranking | Deep catalogues, own + Qloo artists, mood scoring with jitter, `exclude`, re-roll | `songs.test.js` (mood differs, deep track wins, exclude, own artists, Claude candidate cap) |
+| 9 | One check-in could spend up to 9 iTunes searches (limit is about 20 a minute per IP) | 6 per check-in, shared Next data cache for 6 h | build config |
+| 10 | Handoff claimed "not deployed" while the app is live | Corrected; live `/api/diagnose` result recorded | Handoff.md |
+
 ## Known gaps (not fixed, stated plainly)
 
 - Rate limiting is per serverless instance, so it is a speed bump, not a boundary.

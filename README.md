@@ -27,6 +27,15 @@ It then goes a step further and suggests something to listen to or watch from th
 
 **Who it is for:** people in hard seasons, such as worry about money and results or the end of a relationship, whose personal taste (any genre, any country) generic playlists and LLM answers rarely reflect.
 
+## How Batus maps to the judging criteria
+
+| Criterion | Where to look |
+|---|---|
+| **Technological implementation** | Qloo `/search`, `/v2/tags`, `/v2/insights` (artists, podcasts, TV, location) with a rate-limit gate, retries and caching; Claude tool-use agent and song picker that can only choose by id; layered safety; two-phase signed loading; 74 tests, CI |
+| **Design** | Calm, mobile-first UI; one loading state; reliable artist autocomplete; playable previews; per-mood playlists; no account |
+| **Potential impact** | A comfort tool for people in hard moments, with a crisis gate that stops the music and shows human help |
+| **Quality of the idea** | Qloo is the engine, not decoration: without it there are no taste-matched artists, no mood-tag steering, no podcast or show matches. The songs themselves come from a real catalogue, never invented |
+
 ## Why Qloo is the difference
 
 | A chatbot alone | Batus |
