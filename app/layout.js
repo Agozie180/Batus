@@ -1,6 +1,9 @@
 import './globals.css';
 
+const base = process.env.NEXT_PUBLIC_SITE_URL || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : 'http://localhost:3000');
+
 export const metadata = {
+  metadataBase: new URL(base),
   title: 'Batus',
   description: "When your mind won't stop or your heart is hurting, Batus finds your own kind of music through Qloo's taste graph.",
   applicationName: 'Batus',
@@ -10,6 +13,7 @@ export const metadata = {
     description: "When your mind won't stop or your heart is hurting, your own music answers first.",
     type: 'website',
   },
+  twitter: { card: 'summary_large_image', title: 'Batus', description: "When your mind won't stop or your heart is hurting, your own music answers first." },
 };
 
 export const viewport = {

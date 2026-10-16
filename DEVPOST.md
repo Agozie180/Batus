@@ -51,6 +51,6 @@ Cultural intelligence is the difference between technically functional and actua
 Qloo API, Claude (tool use), Next.js, React, Vercel, Node.js
 
 ## Links
-- Live demo: _add your Vercel URL_
+- Live demo: https://batus-woad.vercel.app
 - Repo: https://github.com/Agozie180/Batus
 - License: MIT (visible in the repo's About section)

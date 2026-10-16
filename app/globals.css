@@ -407,3 +407,9 @@ details.sound[open] > summary, details.playlists[open] > summary { margin-bottom
 .matchrow .bar { flex: 1; }
 .matchpill { display: inline-block; font-size: 0.78rem; font-weight: 700; color: var(--accent); background: var(--accent-soft); border: 1px solid var(--accent-line); border-radius: 999px; padding: 3px 10px; white-space: nowrap; }
 .hero .matchpill { margin-top: 8px; }
+
+/* ---------- how it works ---------- */
+.how { list-style: none; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 18px 0 0; padding: 0; text-align: left; }
+.how li { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; line-height: 1.35; color: var(--muted); background: var(--card); border: 1px solid var(--line, rgba(255,255,255,0.08)); border-radius: 12px; padding: 10px; }
+.how b { flex: none; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; background: var(--accent-soft); color: var(--accent); }
+@media (max-width: 560px) { .how { grid-template-columns: 1fr; } }

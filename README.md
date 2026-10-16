@@ -4,7 +4,7 @@
 
 | | |
 |---|---|
-| **Live demo** | _add your Vercel URL after deploy_ |
+| **Live demo** | [batus-woad.vercel.app](https://batus-woad.vercel.app) · [self-test](https://batus-woad.vercel.app/api/diagnose) |
 | **Repo** | [github.com/Agozie180/Batus](https://github.com/Agozie180/Batus) (MIT) |
 | **Event** | [Qloo Agentic Hackathon](https://qloo.devpost.com/), deadline 31 Oct 2026 |
 | **Devpost answers** | [DEVPOST.md](./DEVPOST.md) |
@@ -121,7 +121,7 @@ Without `QLOO_API_KEY` the app runs in **sample mode**: a small fixed list, labe
 
 ## Limitations, stated plainly
 
-- **The live Qloo and Claude calls have been exercised only against local stand-ins that mimic their documented responses, not against the real services from this build.** Response parsing is defensive and every Qloo step has a fallback, but expect small tuning on the first real run. Check *How this was chosen* in the UI for what actually happened.
+- **Verified live (16 Oct 2026):** the deployed `/api/diagnose` passes every Qloo step (search, tags, insights for artists and podcasts) and the iTunes song lookup against the real services. **Not yet verified live: the Claude path** (the demo deployment has no `ANTHROPIC_API_KEY`, so song choice there uses the mood scorer). Claude behaviour is tested only against a stand-in. Check *How this was chosen* in the UI for what actually happened on any run.
 - Qloo's coverage of any particular artist is unmeasured until `npm run coverage` is run with a key. If Qloo does not know an artist, Batus says so and falls back to the mood alone.
 - Songs come from Apple's public iTunes Search API. Which of them fit your situation is decided by Claude (when on) from titles and what it knows of the songs, or by mood words in titles when off. Neither hears the audio or reads lyrics, so a pick can miss. Previews are 30 seconds; full songs open on YouTube or Spotify.
 - If something shows "Qloo problem", open `/api/diagnose`: it shows the real HTTP status from each call.

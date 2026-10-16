@@ -205,6 +205,13 @@ export default function Batus() {
             {health?.agent && <span className="pill on">Claude agent on</span>}
           </div>
           {hello && <p className="hello">{hello}</p>}
+          {!result && !loading && (
+            <ol className="how" aria-label="How Batus works">
+              <li><b>1</b><span>Tell it what you are going through</span></li>
+              <li><b>2</b><span>Qloo&apos;s taste graph finds artists like the ones you love</span></li>
+              <li><b>3</b><span>Real songs, picked for your mood, ready to play</span></li>
+            </ol>
+          )}
         </header>
 
         <section className="card" aria-labelledby="h-theme">

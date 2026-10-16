@@ -17,7 +17,7 @@ Thesis: Batus never invents music. Picks are chosen by Qloo ID and anything not 
 - Round 8 (UX): both themes now offer exactly "Calm me" / "Lift me up" (heartbreak Calm me = gentle sad songs). Artist picker rebuilt (always visible, no Edit; Enter or click; instant chips with remove; "Added" state; typed-name fallback). One loading state (no staged messages). Full song titles (wrap). One match label per artist ("Top match"/"NN% match"); per-song reasons only when Claude chose; clear "Full song" links row. 74 tests.
 - Round 9 (root fix for "songs are always the same"): causes were (1) pool = each artist's top ~12 hits, identical every time, (2) the person's own artists excluded, (3) fixed ranking in the no-AI path, (4) mood tags barely affected artists. Now `lib/songs.js catalogue()` loads up to 200 tracks per artist; `lib/songpick.js` pools the person's own artists ("yours") plus Qloo matches, scores by mood (title words, genre) with per-request jitter, caps 2 per artist, and Claude gets a mood-biased random slice (<=120) and chooses by id. `exclude` (recent ids kept in localStorage `batus.recent`) + a "Different songs" button re-roll. Mood tag keywords changed (calm: acoustic/ambient/folk/worship; dance: dance/afrobeats/pop; release: sad/soul/r&b/ballad; heal: empowering/uplifting/pop/r&b). 74 tests. Claude must be enabled for situation-aware picks; without it the mood scorer is title/genre based.
 - Repo: https://github.com/Agozie180/Batus (public).
-- **Not deployed yet. The real Qloo and Claude APIs have never been called from this build** (only local stand-ins). Biggest risk left.
+- **Deployed: https://batus-woad.vercel.app** (Vercel). Live `/api/diagnose` on 16 Oct passes Qloo search/tags/insights/podcasts and iTunes. `/api/health` shows `agent:false`: no `ANTHROPIC_API_KEY` is set on Vercel, so the Claude song picker is untested live and the demo uses the mood scorer. Add the key + redeploy.
 - LICENSE says "Copyright (c) 2026 Chiagozie"; change it if you want a different name.
 
 ## Run
@@ -47,7 +47,7 @@ npm test                       # 74 tests, no network needed
 2. Check which heartbreak tags Qloo resolves (`sad`, `heartbreak`, `ballad`, `empowering`, `calm`, `upbeat`; see the trace and /api/diagnose) and adjust `MODE_INFO` in `lib/themes.js` if they miss.
 3. Run `npm run coverage`, commit `COVERAGE.md`, quote the real number in README.
 4. Add `ANTHROPIC_API_KEY`, confirm the "Claude agent" badge appears and the model name in `.env.example` is valid for your account.
-5. Deploy on Vercel (import repo, add env vars), check `/api/health`, put the live URL in README, DEVPOST.md and the Devpost form.
+5. Add `ANTHROPIC_API_KEY` in Vercel, redeploy, confirm `/api/health` shows `agent:true`; put the live URL in the Devpost form.
 6. Confirm the MIT license shows in the repo About and the repo is public; set About description and topics.
 7. Record the demo video from `docs/DEMO.md`; paste answers from `DEVPOST.md`. Submit with time to spare.
 

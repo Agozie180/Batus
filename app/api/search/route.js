@@ -3,6 +3,7 @@ import { searchSample } from '../../../lib/sample.js';
 import { limited, clientIp } from '../../../lib/ratelimit.js';
 
 export const runtime = 'nodejs';
+export const maxDuration = 15;
 export const dynamic = 'force-dynamic';
 
 // Artist typeahead. With a Qloo key this is live Qloo search, which also shows
