@@ -371,3 +371,39 @@ details.sound[open] > summary, details.playlists[open] > summary { margin-bottom
 
 .crisis.soft { background: var(--accent-soft); border-color: var(--accent-line); margin-bottom: 14px; padding: 16px 18px; }
 .crisis.soft h2 { color: var(--ink); font-size: 1.15rem; margin-top: 0; }
+
+/* ---------- artist picker, chips, loading ---------- */
+.sound h2 .count { font: 500 0.85rem var(--body); color: var(--muted); margin-left: 6px; }
+.chosen { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.chosen .tag-pill { background: var(--accent-soft); border: 1px solid var(--accent-line); }
+.chosen .check { color: var(--accent); font-weight: 700; }
+.searchbox { position: relative; display: flex; gap: 8px; align-items: center; }
+.searchbox input { flex: 1; min-width: 0; }
+.addbtn { font: inherit; font-weight: 700; background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 12px; padding: 0 18px; min-height: 46px; cursor: pointer; }
+.addbtn[disabled] { opacity: 0.45; cursor: not-allowed; }
+.spinner.sm { width: 14px; height: 14px; border-width: 2px; display: inline-block; vertical-align: -2px; margin-right: 6px; }
+.spinner.inl { position: absolute; right: 86px; top: 16px; margin: 0; }
+.suggest li { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; }
+.suggest li.act { background: var(--accent-soft); }
+.suggest li.done { opacity: 0.55; cursor: default; }
+.addedtag { font-style: normal; color: var(--good); font-size: 0.8rem; }
+.extras { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 12px; }
+.extras summary { cursor: pointer; color: var(--accent); font-weight: 600; font-size: 0.92rem; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ---------- songs: full titles, clear links ---------- */
+.sinfo b { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; line-height: 1.3; }
+.sinfo small { white-space: normal; overflow-wrap: anywhere; }
+.hear { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 6px; }
+.hear .lbl { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; margin-right: 2px; }
+.hear a { font-size: 0.8rem; color: var(--ink); text-decoration: none; border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; min-height: 28px; display: inline-flex; align-items: center; }
+.hear a:hover { border-color: var(--accent); color: var(--accent); }
+.song { grid-template-columns: 52px 1fr auto; align-items: start; }
+.sact { align-self: center; }
+@media (max-width: 520px) { .song { grid-template-columns: 52px 1fr; } .sact { grid-column: 2; justify-content: flex-start; } }
+
+/* ---------- artist cards ---------- */
+.matchrow { display: flex; align-items: center; gap: 10px; grid-column: 1 / -1; }
+.matchrow .bar { flex: 1; }
+.matchpill { display: inline-block; font-size: 0.78rem; font-weight: 700; color: var(--accent); background: var(--accent-soft); border: 1px solid var(--accent-line); border-radius: 999px; padding: 3px 10px; white-space: nowrap; }
+.hero .matchpill { margin-top: 8px; }

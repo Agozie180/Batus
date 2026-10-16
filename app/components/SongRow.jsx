@@ -13,7 +13,7 @@ export default function SongRow({ song, player, inList, onAdd, onRemove }) {
       {song.preview ? (
         <button type="button" className="pbtn" onClick={() => player.toggle(song)} aria-label={`${playing ? 'Pause' : 'Play preview of'} ${song.title} by ${song.artist}`}>
           {song.art ? <img src={song.art} alt="" loading="lazy" referrerPolicy="no-referrer" /> : <Avatar name={song.artist} className="art" />}
-          <span className="ico" aria-hidden="true">{playing ? '❚❚' : '▶'}</span>
+          <span className="ico" aria-hidden="true">{playing ? '❚❚' : '▶'}</span><span className="sr">{playing ? 'Pause' : '30 second preview'}</span>
         </button>
       ) : (
         <a className="pbtn" href={links.youtube} target="_blank" rel="noopener noreferrer" aria-label={`Play ${song.title} on YouTube`}>
@@ -22,13 +22,16 @@ export default function SongRow({ song, player, inList, onAdd, onRemove }) {
         </a>
       )}
       <div className="sinfo">
-        <b>{song.title}</b>
+        <b title={song.title}>{song.title}</b>
         <small>{song.artist}{song.album ? ` · ${song.album}` : ''}</small>
+        <div className="hear" aria-label="Hear the full song">
+          <span className="lbl">Full song</span>
+          {song.url && <a href={song.url} target="_blank" rel="noopener noreferrer" title="Opens this exact track on Apple Music">Apple Music</a>}
+          <a href={links.youtube} target="_blank" rel="noopener noreferrer" title="Searches YouTube for this song">YouTube</a>
+          <a href={links.spotify} target="_blank" rel="noopener noreferrer" title="Searches Spotify for this song">Spotify</a>
+        </div>
       </div>
       <div className="sact">
-        {song.url && <a className="mini" href={song.url} target="_blank" rel="noopener noreferrer" title="Open this exact track on Apple Music">Apple Music</a>}
-        <a className="mini" href={links.youtube} target="_blank" rel="noopener noreferrer" title="Search for this song on YouTube">Find on YouTube</a>
-        <a className="mini" href={links.spotify} target="_blank" rel="noopener noreferrer" title="Search for this song on Spotify">Find on Spotify</a>
         {onRemove ? (
           <button type="button" className="mini danger" onClick={() => onRemove(song)} aria-label={`Remove ${song.title} from playlist`}>Remove</button>
         ) : (

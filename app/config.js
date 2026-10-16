@@ -45,8 +45,8 @@ export const THEMES = {
       ['Betrayed', 'I was cheated on and I feel betrayed.'],
     ],
     modes: [
-      ['release', 'Let it out', 'Sad songs you can feel and cry to'],
-      ['heal', 'Lift me up', 'Songs that own your worth'],
+      ['release', 'Calm me', 'Gentle songs to feel it and settle'],
+      ['heal', 'Lift me up', 'Songs that own your worth and lift you'],
     ],
     soundHint: 'Artists whose songs you play when your heart hurts, in any genre or language. Batus asks Qloo for more like them.',
     park: {

@@ -1,93 +1,134 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import Avatar from './Avatar';
 
-// Artist typeahead. With a Qloo key this is live Qloo search, so the person sees
-// at once whether Qloo knows the artists they love.
-export default function ArtistSearch({ onPick }) {
+// Artist search with live Qloo suggestions. Enter or a click both add the artist,
+// which appears as a chip straight away. If search is down, Enter still adds the
+// typed name so the person is never blocked.
+export default function ArtistSearch({ onPick, added, full }) {
   const [q, setQ] = useState('');
   const [items, setItems] = useState([]);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
-  const [source, setSource] = useState('');
-  const [busy, setBusy] = useState(false);
+  const [state, setState] = useState('idle'); // idle | loading | done | error
   const [problem, setProblem] = useState('');
+  const [source, setSource] = useState('');
+  const cache = useRef(new Map());
+  const inputRef = useRef(null);
+  const listId = useId();
+  const isAdded = (it) => added?.has(it.name.toLowerCase());
 
   useEffect(() => {
     const term = q.trim();
-    if (term.length < 2) { setItems([]); setBusy(false); return undefined; }
+    if (term.length < 2) { setItems([]); setState('idle'); setOpen(false); return undefined; }
+    const key = term.toLowerCase();
+    setOpen(true);
+    if (cache.current.has(key)) {
+      const hit = cache.current.get(key);
+      setItems(hit.items); setSource(hit.source); setState('done'); setActive(-1);
+      return undefined;
+    }
     const ctrl = new AbortController();
-    setBusy(true);
+    setState('loading');
     const t = setTimeout(async () => {
       try {
         const res = await fetch(`/api/search?q=${encodeURIComponent(term)}`, { signal: ctrl.signal });
         const data = await res.json();
-        setItems(data.results || []);
-        setSource(data.source || '');
-        setProblem(data.source === 'error' ? (data.message || 'Qloo search failed.') : '');
+        if (data.source === 'error' || data.source === 'limited') {
+          setItems([]); setProblem(data.message || 'Search is busy. You can still press Enter to add the name.'); setState('error');
+        } else {
+          cache.current.set(key, { items: data.results || [], source: data.source || '' });
+          setItems(data.results || []); setSource(data.source || ''); setState('done');
+        }
         setActive(-1);
-        setOpen(true);
-      } catch { /* aborted or offline */ } finally { setBusy(false); }
-    }, 260);
+      } catch (err) {
+        if (err.name !== 'AbortError') { setItems([]); setProblem('Search is unavailable. You can still press Enter to add the name.'); setState('error'); }
+      }
+    }, 160);
     return () => { clearTimeout(t); ctrl.abort(); };
   }, [q]);
 
-  function choose(item) {
-    onPick({ name: item.name, id: item.id?.startsWith('sample:') ? undefined : item.id, image: item.image || undefined });
-    setQ(''); setItems([]); setOpen(false);
+  function reset() { setQ(''); setItems([]); setOpen(false); setActive(-1); setState('idle'); inputRef.current?.focus(); }
+
+  function choose(it) {
+    if (!it || isAdded(it)) return;
+    onPick({ name: it.name, id: it.id?.startsWith('sample:') ? undefined : it.id, image: it.image || undefined });
+    reset();
   }
 
   function addTyped() {
     const v = q.replace(/\s+/g, ' ').trim();
     if (!v) return;
     onPick({ name: v });
-    setQ(''); setItems([]); setOpen(false);
+    reset();
+  }
+
+  function move(dir) {
+    if (!items.length) return;
+    setOpen(true);
+    let i = active;
+    for (let n = 0; n < items.length; n += 1) {
+      i = (i + dir + items.length) % items.length;
+      if (!isAdded(items[i])) { setActive(i); return; }
+    }
   }
 
   function onKey(e) {
-    if (e.key === 'ArrowDown') { e.preventDefault(); setOpen(true); setActive((i) => Math.min(i + 1, items.length - 1)); }
-    else if (e.key === 'ArrowUp') { e.preventDefault(); setActive((i) => Math.max(i - 1, 0)); }
-    else if (e.key === 'Enter') { e.preventDefault(); if (active >= 0 && items[active]) choose(items[active]); else addTyped(); }
-    else if (e.key === 'Escape') setOpen(false);
+    if (e.key === 'ArrowDown') { e.preventDefault(); move(1); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); move(-1); }
+    else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (active >= 0 && items[active]) choose(items[active]);
+      else {
+        const first = items.find((it) => !isAdded(it));
+        const exact = items.find((it) => it.name.toLowerCase() === q.trim().toLowerCase() && !isAdded(it));
+        if (exact || (first && state === 'done')) choose(exact || first);
+        else addTyped();
+      }
+    } else if (e.key === 'Escape') setOpen(false);
   }
 
-  const showNote = open && q.trim().length >= 2 && !busy && items.length === 0;
+  const term = q.trim();
+  const showList = open && term.length >= 2;
 
   return (
     <div className="combo">
-      <input
-        id="artist-in"
-        type="text"
-        role="combobox"
-        aria-expanded={open}
-        aria-controls="artist-list"
-        aria-autocomplete="list"
-        value={q}
-        maxLength={80}
-        autoComplete="off"
-        placeholder="Search an artist, press Enter to add"
-        onChange={(e) => setQ(e.target.value)}
-        onKeyDown={onKey}
-        onFocus={() => items.length && setOpen(true)}
-        onBlur={() => setTimeout(() => setOpen(false), 150)}
-      />
-      {open && (items.length > 0 || showNote) && (
-        <ul className="suggest" id="artist-list" role="listbox">
+      <label className="field-label" htmlFor="artist-in">Add an artist</label>
+      <div className="searchbox">
+        <input
+          id="artist-in" ref={inputRef} type="text" role="combobox" aria-expanded={showList} aria-controls={listId}
+          aria-autocomplete="list" aria-activedescendant={active >= 0 ? `${listId}-${active}` : undefined}
+          value={q} maxLength={80} autoComplete="off" disabled={full}
+          placeholder={full ? 'Remove one to add another' : 'Type a name, e.g. an artist you play when you need comfort'}
+          onChange={(e) => setQ(e.target.value)} onKeyDown={onKey}
+          onFocus={() => term.length >= 2 && setOpen(true)}
+          onBlur={() => setTimeout(() => setOpen(false), 150)}
+        />
+        <button type="button" className="addbtn" onClick={() => (items.find((it) => !isAdded(it)) && state === 'done' ? choose(items.find((it) => !isAdded(it))) : addTyped())} disabled={full || term.length < 1}>Add</button>
+        {state === 'loading' && <span className="spinner sm inl" aria-label="Searching" />}
+      </div>
+      {showList && (
+        <ul className="suggest" id={listId} role="listbox" aria-label="Artist suggestions">
           {items.map((it, i) => (
-            <li key={it.id || it.name} role="option" aria-selected={i === active} onMouseDown={(e) => { e.preventDefault(); choose(it); }}>
+            <li
+              key={it.id || it.name} id={`${listId}-${i}`} role="option" aria-selected={i === active} aria-disabled={isAdded(it)}
+              className={`${i === active ? 'act' : ''}${isAdded(it) ? ' done' : ''}`}
+              onMouseDown={(e) => { e.preventDefault(); choose(it); }} onMouseEnter={() => setActive(i)}
+            >
               <Avatar src={it.image} name={it.name} className="dot sq" />
-              <span><b>{it.name}</b>{it.tags?.length > 0 && <small>{it.tags.join(' · ')}</small>}</span>
+              <span><b>{it.name}</b>{it.tags?.length > 0 && <small>{it.tags.slice(0, 3).join(' · ')}</small>}</span>
+              {isAdded(it) && <em className="addedtag">Added ✓</em>}
             </li>
           ))}
-          {showNote && (
+          {state === 'loading' && items.length === 0 && <li className="note" role="option" aria-selected="false">Searching...</li>}
+          {state === 'error' && <li className="note" role="option" aria-selected="false">{problem}</li>}
+          {state === 'done' && items.length === 0 && (
             <li className="note" role="option" aria-selected="false">
-              {source === 'error'
-                ? `${problem} Press Enter to add it by name anyway.`
-                : source === 'qloo' ? 'Qloo has no match. Press Enter to add it by name anyway.' : 'No match. Press Enter to add it by name.'}
+              {source === 'qloo' ? 'Qloo has no match.' : 'No match.'} Press Enter to add &ldquo;{term}&rdquo; by name anyway.
             </li>
           )}
-          {items.length > 0 && source === 'sample' && <li className="note" role="option" aria-selected="false">Sample matches (no Qloo key set)</li>}
+          {state === 'done' && items.length > 0 && source === 'sample' && <li className="note" role="option" aria-selected="false">Sample matches (no Qloo key set)</li>}
         </ul>
       )}
     </div>

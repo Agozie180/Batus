@@ -9,12 +9,10 @@ import { KIND, LINK_LABEL, SOURCE_LABEL, THEMES } from '../config';
 
 const pctOf = (a) => (typeof a === 'number' ? Math.round(Math.min(1, Math.max(0, a)) * 100) : null);
 
-function whyLine(p) {
-  const bits = [];
-  if (p.tags?.length) bits.push(p.tags.slice(0, 3).join(' · '));
+function matchLabel(p) {
   const pct = pctOf(p.affinity);
-  if (pct !== null) bits.push(`${pct}% taste match`);
-  return bits.join(' · ');
+  if (pct === null) return null;
+  return pct >= 99 ? 'Top match' : `${pct}% match`;
 }
 
 function Links({ links, primary }) {
@@ -47,14 +45,14 @@ function Card({ p, saved, onSave, player, inList, onAddSong }) {
       <div>
         <span className="kind">{KIND[p.type] || 'Pick'}</span>
         <h3>{p.name}</h3>
-        {p.tags?.length > 0 && <p className="meta">{p.tags.join(' · ')}</p>}
+        {p.tags?.length > 0 && <p className="meta">{p.tags.slice(0, 3).join(' · ')}</p>}
       </div>
       {isArtist && onSave ? (
         <button type="button" className="heart" aria-pressed={saved} aria-label={saved ? `${p.name} is in your sound` : `Add ${p.name} to your sound`} disabled={saved} onClick={() => onSave(p)}>
           {saved ? '♥' : '♡'}
         </button>
       ) : <span />}
-      {pct !== null && <div className="bar" title={`Taste match ${pct}%`}><i style={{ width: `${pct}%` }} /></div>}
+      {pct !== null && <div className="matchrow"><span className="matchpill">{matchLabel(p)}</span><div className="bar" aria-hidden="true"><i style={{ width: `${pct}%` }} /></div></div>}
       {isArtist && p.songs?.length > 0
         ? <Songs p={p} player={player} inList={inList} onAddSong={onAddSong} />
         : <Links links={p.links} primary={isArtist ? 'Play on YouTube' : undefined} />}
@@ -69,7 +67,8 @@ function Hero({ p, saved, onSave, player, inList, onAddSong }) {
       <div className="hero-body">
         <span className="kind">Start here</span>
         <h3>{p.name}</h3>
-        <p className="meta">{whyLine(p) || 'Matched to your taste by Qloo'}</p>
+        {p.tags?.length > 0 && <p className="meta">{p.tags.slice(0, 3).join(' · ')}</p>}
+        {matchLabel(p) && <span className="matchpill">{matchLabel(p)} for your taste</span>}
         {!p.songs?.length && <Links links={p.links} primary="Play now" />}
       </div>
       {onSave && (
@@ -121,7 +120,10 @@ export default function Result({ data, theme, mode, savedNames, songsState, onRe
       )}
 
       {!data.set && songsState === 'loading' && (
-        <div className="working"><span className="spinner" aria-hidden="true" /><span role="status">Choosing real songs for what you are going through...</span></div>
+        <div role="status" aria-live="polite">
+          <p className="sr">Finding your music</p>
+          <div className="skel row-skel" aria-hidden="true" /><div className="skel row-skel" aria-hidden="true" /><div className="skel row-skel" aria-hidden="true" />
+        </div>
       )}
       {!data.set && songsState === 'error' && (
         <p className="notice" role="alert">Your artists are below, but the songs did not load. <button type="button" className="chip" onClick={onRetrySongs}>Try again</button></p>
@@ -129,11 +131,11 @@ export default function Result({ data, theme, mode, savedNames, songsState, onRe
 
       {data.set?.length > 0 && (
         <section className="set" aria-label="A set for you">
-          <h2 className="section-title">{data.setBy === 'claude' ? 'A set chosen for what you are going through' : 'A set matched to your mood'}</h2>
+          <h2 className="section-title">{data.setBy === 'claude' ? 'Songs for what you are going through' : 'Songs matched to your mood'}</h2>
           <p className="hint">
             {data.setBy === 'claude'
-              ? 'Real songs by artists Qloo matched to your taste, picked and ordered for you. Listen top to bottom.'
-              : 'Real songs by artists Qloo matched to your taste, picked by mood words in their titles. Listen top to bottom.'}
+              ? 'Real songs by your Qloo matches, picked and ordered for you. Listen top to bottom.'
+              : `Real songs by your Qloo matches${data.moodTags?.length ? `, chosen for Qloo's “${data.moodTags[0]}” mood` : ''}. Listen top to bottom.`}
           </p>
           <div className="songs">
             {data.set.map((song, i) => (
@@ -141,7 +143,7 @@ export default function Result({ data, theme, mode, savedNames, songsState, onRe
                 <span className="num" aria-hidden="true">{i + 1}</span>
                 <div className="setbody">
                   <SongRow song={song} player={player} inList={inList(song)} onAdd={onAddSong} />
-                  {song.why && <p className="why">{song.why}</p>}
+                  {data.setBy === 'claude' && song.why && <p className="why">{song.why}</p>}
                 </div>
               </div>
             ))}
@@ -151,7 +153,6 @@ export default function Result({ data, theme, mode, savedNames, songsState, onRe
               {data.more.map((song) => (
                 <div key={song.id} className="setbody">
                   <SongRow song={song} player={player} inList={inList(song)} onAdd={onAddSong} />
-                  {song.why && <p className="why">{song.why}</p>}
                 </div>
               ))}
             </div>

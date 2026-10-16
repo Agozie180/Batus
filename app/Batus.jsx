@@ -25,7 +25,6 @@ export default function Batus() {
   const [error, setError] = useState('');
   const [result, setResult] = useState(null);
   const [toast, setToast] = useState('');
-  const [phase, setPhase] = useState('');
   const [songsState, setSongsState] = useState('idle');
   const songsRun = useRef(0);
   const snap = useRef(null);
@@ -145,12 +144,7 @@ export default function Batus() {
     setLoading(true);
     setError('');
     setResult(null);
-    setPhase('Reading your artists in Qloo...');
-    const timers = [
-      setTimeout(() => setPhase('Finding the sound that fits how you feel...'), 3500),
-      setTimeout(() => setPhase('Choosing songs for what you are going through...'), 8000),
-      setTimeout(() => setPhase('Still working. Qloo can be slow sometimes, thank you for waiting.'), 16000),
-    ];
+    const timers = [];
     const ctrl = new AbortController();
     const abort = setTimeout(() => ctrl.abort(), 40000);
     requestAnimationFrame(() => outRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
@@ -233,47 +227,40 @@ export default function Batus() {
           </div>
         </section>
 
-        <details className="card sound" open={artists.length === 0}>
-          <summary>
-            <span className="sum-title">Your sound</span>
-            <span className="sum-sub">
-              {artists.length > 0 ? artists.map((a) => a.name).join(' · ') : 'Add a few artists'}
-              {songs.length > 0 && ` · ${songs.length} song${songs.length > 1 ? 's' : ''}`}
-            </span>
-            <span className="sum-edit">Edit</span>
-          </summary>
-
+        <section className="card sound" aria-labelledby="h-sound">
+          <h2 id="h-sound">Artists you love <span className="count">{artists.length}/{MAX_ARTISTS}</span></h2>
           <p className="hint">{T.soundHint}</p>
-          {artists.length === 0 && <p className="hint strong">No artists yet? That is fine: Batus can start from the mood alone and ask Qloo what fits.</p>}
-          <label className="field-label" htmlFor="artist-in">Favourite artists</label>
-          <div className="tags">
+          <ul className="chosen" aria-label="Your artists" aria-live="polite">
             {artists.map((a) => (
-              <span className="tag-pill" key={a.name}>
-                {a.image && <Avatar src={a.image} name={a.name} className="dot" />}
+              <li className="tag-pill" key={a.name}>
+                {a.image ? <Avatar src={a.image} name={a.name} className="dot" /> : <span className="check" aria-hidden="true">✓</span>}
                 <span className="nm">{a.name}</span>
                 <button type="button" aria-label={`Remove ${a.name}`} onClick={() => setArtists((cur) => cur.filter((x) => x.name !== a.name))}>×</button>
-              </span>
+              </li>
             ))}
-          </div>
-          <ArtistSearch onPick={addArtist} />
-
-          <SongInput songs={songs} setSongs={setSongs} />
-
-          <label className="field-label" htmlFor="loc">Near <span className="opt">(optional, nudges results toward what&apos;s popular there)</span></label>
-          <select id="loc" value={location} onChange={(e) => setLocation(e.target.value)}>
-            {CITIES.map((c) => <option key={c} value={c}>{c || 'Anywhere'}</option>)}
-          </select>
+          </ul>
+          {artists.length === 0 && <p className="hint">None yet. You can start from the mood alone, or search an artist below.</p>}
+          <ArtistSearch onPick={addArtist} added={savedNames} full={artists.length >= MAX_ARTISTS} />
 
           {health?.agent && (
             <label className="switch">
               <input type="checkbox" checked={useAi} onChange={(e) => setUseAi(e.target.checked)} />
-              <span><b>Let Claude write my reply.</b> It sends your check-in text to Claude to compose a kind message. Turn off to keep it on simple built-in wording.</span>
+              <span><b>Let Claude read my check-in.</b> Your text is sent to Claude to choose songs and write a kind reply. Turn off to keep it on this device and the server only.</span>
             </label>
           )}
-        </details>
+
+          <details className="extras">
+            <summary>More options: songs you love, place</summary>
+            <SongInput songs={songs} setSongs={setSongs} />
+            <label className="field-label" htmlFor="loc">Near <span className="opt">(optional)</span></label>
+            <select id="loc" value={location} onChange={(e) => setLocation(e.target.value)}>
+              {CITIES.map((c) => <option key={c} value={c}>{c || 'Anywhere'}</option>)}
+            </select>
+          </details>
+        </section>
 
         <button className="go" type="button" onClick={go} disabled={loading}>
-          {loading ? 'Asking Qloo for your music...' : 'Find my music'}
+          {loading ? <><span className="spinner sm" aria-hidden="true" /> Finding your music...</> : 'Find my music'}
         </button>
         <div className="status" role="alert">
           {error && (<><span>{error}</span> <button type="button" className="chip retry" onClick={go}>Try again</button></>)}
@@ -281,7 +268,7 @@ export default function Batus() {
         <p className="toast" role="status" aria-live="polite">{toast}</p>
 
         <div ref={outRef} className="out-anchor">
-          {loading && <Skeleton phase={phase} />}
+          {loading && <Skeleton />}
           {result && !result.crisis && result.concernNote && <Crisis data={result.concernNote} soft />}
           {result && (result.crisis ? <Crisis data={result} /> : (
             <Result
@@ -311,15 +298,15 @@ export default function Batus() {
   );
 }
 
-function Skeleton({ phase }) {
+function Skeleton() {
   return (
     <div className="out" role="status" aria-live="polite">
-      <div className="working"><span className="spinner" aria-hidden="true" /><span>{phase}</span></div>
+      <p className="sr">Finding your music</p>
       <div aria-hidden="true">
-      <div className="skel msg-skel" />
-      <div className="skel hero-skel" />
-      <div className="skel row-skel" />
-      <div className="skel row-skel" />
+        <div className="skel msg-skel" />
+        <div className="skel row-skel" />
+        <div className="skel row-skel" />
+        <div className="skel row-skel" />
       </div>
     </div>
   );
