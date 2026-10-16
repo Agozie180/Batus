@@ -115,7 +115,17 @@ export default function Batus() {
   }
 
   // Phase two: real songs for the artists Qloo returned, chosen for the person's situation.
-  async function loadSongs(data) {
+  function recentIds() {
+    try { return JSON.parse(localStorage.getItem('batus.recent') || '[]').filter((x) => typeof x === 'string'); } catch { return []; }
+  }
+  function rememberIds(ids) {
+    try { localStorage.setItem('batus.recent', JSON.stringify([...new Set([...ids, ...recentIds()])].slice(0, 60))); } catch { /* private mode */ }
+  }
+
+  // reroll: also skip the songs currently on screen so the person gets a different set.
+  async function loadSongs(data, reroll = false) {
+    const shown = reroll ? [...(data.set || []), ...(data.more || [])].map((x) => x.id) : [];
+    const exclude = [...new Set([...shown, ...recentIds()])].slice(0, 80);
     const run = ++songsRun.current;
     setSongsState('loading');
     const ctrl = new AbortController();
@@ -123,13 +133,14 @@ export default function Batus() {
     try {
       const res = await fetch('/api/songs', {
         method: 'POST', signal: ctrl.signal, headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ payload: data.songsPayload, token: data.songsToken, ...snap.current }),
+        body: JSON.stringify({ payload: data.songsPayload, token: data.songsToken, exclude, ...snap.current }),
       });
       const out = await res.json();
       if (run !== songsRun.current) return;
       if (!res.ok) throw new Error(out.error || 'Request failed');
       if (out.crisis) { setResult(out); setSongsState('idle'); return; }
       setResult((cur) => (cur && !cur.crisis ? { ...cur, set: out.set, more: out.more, setBy: out.setBy, trace: [...(cur.trace || []), out.note].filter(Boolean) } : cur));
+      rememberIds((out.set || []).map((x) => x.id));
       setSongsState('done');
     } catch {
       if (run === songsRun.current) setSongsState('error');
@@ -274,6 +285,7 @@ export default function Batus() {
             <Result
               songsState={songsState}
               onRetrySongs={() => loadSongs(result)}
+              onReroll={() => loadSongs(result, true)}
               data={result}
               theme={theme}
               mode={mode}

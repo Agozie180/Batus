@@ -23,15 +23,15 @@ test('live path: Qloo artists, seeds dropped, mood tag + location sent, cross-do
 
   const artistQuery = log.find((c) => c.path === '/v2/insights' && c.params['filter.type'] === 'urn:entity:artist');
   assert.equal(artistQuery.params['signal.location.query'], 'Lagos');
-  assert.match(artistQuery.params['signal.interests.tags'], /genre:music:upbeat/);
-  assert.match(artistQuery.params['signal.interests.tags'], /genre:music:dance/); // dance mood
+  assert.match(artistQuery.params['signal.interests.tags'], /genre:music:dance/);
+  assert.match(artistQuery.params['signal.interests.tags'], /genre:music:afrobeats/); // dance mood
 });
 
 test('calm mode biases toward the worship tag', async () => {
   const log = [];
   await recommend({ artists: [{ name: 'Sinach' }], mode: 'calm', apiKey: 'k', fetchImpl: router(qlooRoutes, log) });
   const q = log.find((c) => c.path === '/v2/insights' && c.params['filter.type'] === 'urn:entity:artist');
-  assert.match(q.params['signal.interests.tags'], /genre:music:calm/);
+  assert.match(q.params['signal.interests.tags'], /genre:music:acoustic/);
 });
 
 test('ids chosen from typeahead skip the search call', async () => {

@@ -81,7 +81,7 @@ function Hero({ p, saved, onSave, player, inList, onAddSong }) {
   );
 }
 
-export default function Result({ data, theme, mode, savedNames, songsState, onRetrySongs, player, playlist, onAddSong, onSave, onRestart }) {
+export default function Result({ data, theme, mode, savedNames, songsState, onRetrySongs, onReroll, player, playlist, onAddSong, onSave, onRestart }) {
   const [breathing, setBreathing] = useState(false);
   const [showMore, setShowMore] = useState(false);
   const music = data.picks.filter((p) => p.type === 'artist');
@@ -159,6 +159,11 @@ export default function Result({ data, theme, mode, savedNames, songsState, onRe
           )}
           <div className="pactions">
             <button type="button" className="chip" onClick={() => data.set.filter((x) => !inList(x)).forEach(onAddSong)}>Add the whole set to my playlist</button>
+            {onReroll && (
+              <button type="button" className="chip" disabled={songsState === 'loading'} onClick={onReroll}>
+                {songsState === 'loading' ? 'Finding more...' : 'Different songs'}
+              </button>
+            )}
             {data.more?.length > 0 && (
               <button type="button" className="chip ghost" aria-expanded={showMore} onClick={() => setShowMore((v) => !v)}>
                 {showMore ? 'Show fewer songs' : `Show ${data.more.length} more songs`}
