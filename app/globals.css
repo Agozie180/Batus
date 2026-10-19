@@ -413,3 +413,34 @@ details.sound[open] > summary, details.playlists[open] > summary { margin-bottom
 .how li { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; line-height: 1.35; color: var(--muted); background: var(--card); border: 1px solid var(--line, rgba(255,255,255,0.08)); border-radius: 12px; padding: 10px; }
 .how b { flex: none; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; background: var(--accent-soft); color: var(--accent); }
 @media (max-width: 560px) { .how { grid-template-columns: 1fr; } }
+
+/* ---------- what Qloo added ---------- */
+.qreport { background: var(--card); border: 1px solid var(--accent); border-radius: 18px; padding: 18px; margin: 0 0 18px; box-shadow: 0 0 0 4px var(--accent-soft); }
+.qr-head { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; }
+.qr-head h2 { margin: 0; font-size: 20px; }
+.qr-head p { margin: 2px 0 0; color: var(--muted); font-size: 14px; }
+.qr-badge { flex: none; padding: 6px 12px; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font-weight: 800; letter-spacing: 1.5px; font-size: 12px; text-transform: uppercase; }
+.qr-stats { list-style: none; margin: 0 0 14px; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; }
+.qr-stats li { background: var(--bg-2); border-radius: 12px; padding: 10px 12px; display: grid; gap: 2px; }
+.qr-stats b { font-size: 26px; line-height: 1; color: var(--accent); font-family: var(--display); }
+.qr-stats span { font-size: 12px; color: var(--muted); line-height: 1.3; }
+.qr-table { display: grid; gap: 6px; font-size: 14px; }
+.qr-row { display: grid; grid-template-columns: 0.8fr 1.1fr 1.4fr; gap: 10px; padding: 9px 0; border-top: 1px solid rgba(255,255,255,0.08); line-height: 1.4; }
+.qr-row.qr-h { border-top: 0; font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); padding: 0 0 2px; }
+.qr-row .k { font-weight: 700; color: var(--ink); }
+.qr-row .a { color: var(--muted); }
+.qr-row .q { color: var(--ink); }
+.qr-row.qr-h .q { color: var(--accent); }
+.qr-legend { margin: 12px 0 0; font-size: 12px; color: var(--muted); line-height: 1.9; }
+.prov { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; margin-right: 6px; letter-spacing: 0.4px; }
+.prov.q { background: var(--accent); color: var(--accent-ink); }
+.prov.a { background: rgba(255,255,255,0.14); color: var(--ink); margin-left: 10px; }
+.prov.y { background: rgba(143,227,176,0.2); color: #8fe3b0; margin-left: 10px; }
+.prov-line { margin: 4px 0 0; font-size: 12px; color: var(--muted); }
+.prov-line .prov { margin-left: 0; }
+@media (max-width: 600px) {
+  .qr-row { grid-template-columns: 1fr; gap: 3px; }
+  .qr-row.qr-h { display: none; }
+  .qr-row .a::before { content: 'A chatbot alone: '; font-weight: 700; }
+  .qr-row .q::before { content: 'Qloo: '; font-weight: 700; color: var(--accent); }
+}

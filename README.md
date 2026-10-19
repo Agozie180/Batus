@@ -36,6 +36,8 @@ It then goes a step further and suggests something to listen to or watch from th
 | **Potential impact** | A comfort tool for people in hard moments, with a crisis gate that stops the music and shows human help |
 | **Quality of the idea** | Qloo is the engine, not decoration: without it there are no taste-matched artists, no mood-tag steering, no podcast or show matches. The songs themselves come from a real catalogue, never invented |
 
+Every result opens with a **"What Qloo added"** card built only from what Qloo returned for that check-in: how many artists came from the taste graph, the best measured match %, the taste tags, the podcast and show matches, and a side-by-side with what a chatbot alone would do. Each song is labelled by where it came from (Qloo match %, your own artist, or the Apple catalogue).
+
 ## Why Qloo is the difference
 
 | A chatbot alone | Batus |

@@ -81,6 +81,69 @@ function Hero({ p, saved, onSave, player, inList, onAddSong }) {
   );
 }
 
+
+// What Qloo contributed, computed only from what Qloo actually returned for this check-in.
+function QlooReport({ data, music, beyond, recognised }) {
+  const tops = music.map((m) => ({ m, pct: pctOf(m.affinity) })).filter((x) => x.pct !== null).sort((a, b) => b.pct - a.pct);
+  const top = tops[0];
+  const tags = data.signature?.length || 0;
+  const podcast = beyond.find((b) => b.type === 'podcast');
+  const show = beyond.find((b) => b.type === 'tv_show');
+  const moodTag = data.moodTags?.[0];
+  if (data.source !== 'qloo' || music.length === 0) return null;
+  const stats = [
+    [music.length, 'artists from the taste graph'],
+    top ? [`${top.pct}%`, 'best measured match'] : null,
+    tags ? [tags, 'taste tags attached'] : null,
+    beyond.length ? [beyond.length, 'podcast & show matches'] : null,
+  ].filter(Boolean);
+  const rows = [
+    ['Where the artists come from',
+      'Its memory of text it was trained on. Often the same famous names, and it can invent one.',
+      `Qloo's taste graph, by ID. ${recognised ? `${recognised === 1 ? 'Your artist was' : `${recognised} of your artists were`} recognised. ` : ''}Anything Qloo did not return is thrown away.`],
+    ['How well each one fits you',
+      'A guess in words, or a made-up number.',
+      top ? `A measured score: ${top.m.name} is a ${top.pct}% match for your taste.` : 'A measured affinity score for each artist.'],
+    ['What it feels like',
+      'Its own idea of what “sad” or “calming” means.',
+      moodTag ? `Qloo's own music tag, “${moodTag}”, steered the match.` : 'Qloo mood tags steer the match.'],
+    ['Beyond music',
+      'Usually stays with music.',
+      podcast || show ? `From the same taste: ${[podcast && `the podcast ${podcast.name}`, show && `the show ${show.name}`].filter(Boolean).join(' and ')}.` : 'Podcasts and TV from the same taste.'],
+  ];
+  return (
+    <section className="qreport" aria-labelledby="qr-h">
+      <div className="qr-head">
+        <span className="qr-badge">Qloo</span>
+        <div>
+          <h2 id="qr-h">What Qloo added</h2>
+          <p>A chatbot can describe music. Qloo measures taste.</p>
+        </div>
+      </div>
+      <ul className="qr-stats">
+        {stats.map(([n, l]) => <li key={l}><b>{n}</b><span>{l}</span></li>)}
+      </ul>
+      <div className="qr-table" role="table" aria-label="A chatbot alone compared with Qloo in Batus">
+        <div className="qr-row qr-h" role="row"><span role="columnheader" /><span role="columnheader">A chatbot alone</span><span role="columnheader" className="q">Qloo, in Batus</span></div>
+        {rows.map(([k, a, b]) => (
+          <div className="qr-row" role="row" key={k}>
+            <span role="rowheader" className="k">{k}</span>
+            <span role="cell" className="a">{a}</span>
+            <span role="cell" className="q">{b}</span>
+          </div>
+        ))}
+      </div>
+      <p className="qr-legend"><span className="prov q">Qloo</span> artists, match %, tags, podcast, show <span className="prov a">Apple catalogue</span> songs and previews <span className="prov y">You</span> your own artists</p>
+    </section>
+  );
+}
+
+function Prov({ song }) {
+  if (song.source === 'yours') return <p className="prov-line"><span className="prov y">You</span> an artist you love</p>;
+  const pct = pctOf(song.affinity);
+  return <p className="prov-line"><span className="prov q">Qloo</span> {pct !== null ? `${pct}% taste match` : 'taste match'} · {song.artist}</p>;
+}
+
 export default function Result({ data, theme, mode, savedNames, songsState, onRetrySongs, onReroll, player, playlist, onAddSong, onSave, onRestart }) {
   const [breathing, setBreathing] = useState(false);
   const [showMore, setShowMore] = useState(false);
@@ -90,6 +153,7 @@ export default function Result({ data, theme, mode, savedNames, songsState, onRe
   const saved = (p) => savedNames.has(p.name.toLowerCase());
   const inList = (song) => playlist.some((x) => x.id === song.id);
   const song = { player, inList, onAddSong };
+  const recognised = Math.max(0, savedNames.size - (data.unmatched?.length || 0));
 
   return (
     <section className="out" aria-label="Your matches">
@@ -110,6 +174,8 @@ export default function Result({ data, theme, mode, savedNames, songsState, onRe
         )}
         {breathing && <Breathe onDone={() => setBreathing(false)} />}
       </div>
+
+      <QlooReport data={data} music={music} beyond={beyond} recognised={recognised} />
 
       {data.unmatched?.length > 0 && (
         <p className="notice" role="status">
@@ -144,6 +210,7 @@ export default function Result({ data, theme, mode, savedNames, songsState, onRe
                 <div className="setbody">
                   <SongRow song={song} player={player} inList={inList(song)} onAdd={onAddSong} />
                   {data.setBy === 'claude' && song.why && <p className="why">{song.why}</p>}
+                  <Prov song={song} />
                 </div>
               </div>
             ))}
@@ -217,14 +284,6 @@ export default function Result({ data, theme, mode, savedNames, songsState, onRe
         </details>
       )}
 
-      <details className="trace why">
-        <summary>Why Qloo, and not just an AI chatbot?</summary>
-        <ul>
-          <li>A chatbot guesses what &quot;calming music&quot; or &quot;a breakup song&quot; means. Qloo knows what people with <i>your</i> taste actually love, across music, shows and podcasts.</li>
-          <li>Every artist here is yours or came back from Qloo&apos;s taste graph, and every song is a real track from that artist&apos;s catalogue. The AI can choose and explain, but it cannot add an artist or a song of its own.</li>
-          <li>Add songs to a playlist and tap the heart on any artist, and Batus remembers them, so your taste profile grows each time you use it.</li>
-        </ul>
-      </details>
 
       <button type="button" className="chip again" onClick={onRestart}>Start a new check-in</button>
     </section>
