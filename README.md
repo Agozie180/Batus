@@ -5,6 +5,7 @@
 | | |
 |---|---|
 | **Live demo** | [batus-woad.vercel.app](https://batus-woad.vercel.app) · [self-test](https://batus-woad.vercel.app/api/diagnose) |
+| **Demo video** | [Watch on YouTube](https://youtu.be/zYwt6FCvSM0) |
 | **Repo** | [github.com/Agozie180/Batus](https://github.com/Agozie180/Batus) (MIT) |
 | **Event** | [Qloo Agentic Hackathon](https://qloo.devpost.com/), deadline 31 Oct 2026 |
 | **Devpost answers** | [DEVPOST.md](./DEVPOST.md) |

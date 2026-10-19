@@ -54,3 +54,4 @@ Qloo API, Claude (tool use), Next.js, React, Vercel, Node.js
 - Live demo: https://batus-woad.vercel.app
 - Repo: https://github.com/Agozie180/Batus
 - License: MIT (visible in the repo's About section)
+- Demo video: https://youtu.be/zYwt6FCvSM0
