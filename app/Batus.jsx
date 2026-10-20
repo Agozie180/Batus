@@ -7,7 +7,7 @@ import Result from './components/Result';
 import Playlists from './components/Playlists';
 import usePlayer from './usePlayer';
 import {
-  CITIES, MAX_ARTISTS, MAX_SONGS, PLAYLIST_KEY, STORAGE_KEY, THEMES, defaultProfile, greeting,
+  CITIES, EXAMPLES, MAX_ARTISTS, MAX_SONGS, PLAYLIST_KEY, STORAGE_KEY, THEMES, defaultProfile, greeting,
 } from './config';
 
 export default function Batus() {
@@ -18,6 +18,7 @@ export default function Batus() {
   const [songs, setSongs] = useState([]);
   const [location, setLocation] = useState('');
   const [useAi, setUseAi] = useState(true);
+  const [deeper, setDeeper] = useState(false);
   const [health, setHealth] = useState(null);
   const [hello, setHello] = useState('');
 
@@ -28,6 +29,7 @@ export default function Batus() {
   const [songsState, setSongsState] = useState('idle');
   const songsRun = useRef(0);
   const snap = useRef(null);
+  const lastRun = useRef(null);
   const [playlists, setPlaylists] = useState({});
   const player = usePlayer();
   const outRef = useRef(null);
@@ -86,14 +88,17 @@ export default function Batus() {
     });
   }, [flash]);
 
+  // Songs belong to the playlist of the mood they were found for, even if the toggles moved since.
+  const resultMode = result?.mode || mode;
+  const resultTheme = result?.theme || theme;
   const addSong = useCallback((song) => {
     setPlaylists((cur) => {
-      const list = cur[mode] || [];
+      const list = cur[resultMode] || [];
       if (list.some((x) => x.id === song.id)) return cur;
-      return { ...cur, [mode]: [...list, song].slice(-100) };
+      return { ...cur, [resultMode]: [...list, song].slice(-100) };
     });
-    flash(`Added to ${THEMES[theme].modes.find(([m]) => m === mode)?.[1] || 'your playlist'}.`);
-  }, [mode, theme, flash]);
+    flash(`Added to ${THEMES[resultTheme].modes.find(([m]) => m === resultMode)?.[1] || 'your playlist'}.`);
+  }, [resultMode, resultTheme, flash]);
   const removeSong = useCallback((key, song) => {
     setPlaylists((cur) => ({ ...cur, [key]: (cur[key] || []).filter((x) => x.id !== song.id) }));
   }, []);
@@ -149,13 +154,14 @@ export default function Batus() {
     }
   }
 
-  async function go() {
+  // One check-in. `p` is passed in whole so an example can run the moment it is tapped.
+  async function run(p) {
+    lastRun.current = p;
     songsRun.current += 1;
     setSongsState('idle');
     setLoading(true);
     setError('');
     setResult(null);
-    const timers = [];
     const ctrl = new AbortController();
     const abort = setTimeout(() => ctrl.abort(), 40000);
     requestAnimationFrame(() => outRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
@@ -165,16 +171,16 @@ export default function Batus() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          text, theme, mode, location, ai: useAi, defer: true,
-          artists: artists.map(({ name, id }) => ({ name, id })),
-          songs,
+          text: p.text, theme: p.theme, mode: p.mode, location: p.location, ai: p.ai, deeper: p.deeper, defer: true,
+          artists: p.artists.map(({ name, id }) => ({ name, id })),
+          songs: p.songs,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Request failed');
       setResult(data);
       requestAnimationFrame(() => outRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
-      snap.current = { text, theme, mode, ai: useAi };
+      snap.current = { text: p.text, theme: p.theme, mode: p.mode, ai: p.ai };
       if (!data.crisis && data.songsToken) loadSongs(data);
     } catch (err) {
       setError(err.name === 'AbortError'
@@ -183,10 +189,24 @@ export default function Batus() {
           ? 'Could not reach Batus. Check your connection.'
           : (err.message || 'Something went wrong.'));
     } finally {
-      timers.forEach(clearTimeout);
       clearTimeout(abort);
       setLoading(false);
     }
+  }
+
+  const go = () => run({ text, theme, mode, location, ai: useAi, deeper, artists, songs });
+  const retry = () => run(lastRun.current || { text, theme, mode, location, ai: useAi, deeper, artists, songs });
+
+  function runExample(ex) {
+    profiles.current[theme] = { artists, songs, location };
+    const exArtists = ex.artists.map((name) => ({ name }));
+    setTheme(ex.theme);
+    setMode(ex.mode);
+    setText(ex.text);
+    setArtists(exArtists);
+    setSongs([]);
+    setLocation('');
+    run({ text: ex.text, theme: ex.theme, mode: ex.mode, location: '', ai: useAi, deeper, artists: exArtists, songs: [] });
   }
 
   const savedNames = useMemo(() => new Set(artists.map((a) => a.name.toLowerCase())), [artists]);
@@ -199,20 +219,30 @@ export default function Batus() {
           <div className="logo" aria-hidden="true"><i /></div>
           <h1 className="brand">Batus</h1>
           <p className="tag">When your mind won&apos;t stop or your heart is hurting, let your own music answer first.</p>
+          <p className="value">Batus is an AI agent that asks Qloo&apos;s taste graph what people with <i>your</i> taste love, then picks real songs, plus a podcast, a show, a film and a book, for what you are going through.</p>
           <div className="status-pills" aria-label="Service status">
             <span className="pill">Powered by Qloo&apos;s taste graph</span>
             {health && <span className={`pill ${health.qloo ? 'on' : 'warn'}`}>{health.qloo ? 'Qloo live' : 'Sample mode'}</span>}
             {health?.agent && <span className="pill on">Claude agent on</span>}
           </div>
           {hello && <p className="hello">{hello}</p>}
-          {!result && !loading && (
-            <ol className="how" aria-label="How Batus works">
-              <li><b>1</b><span>Tell it what you are going through</span></li>
-              <li><b>2</b><span>Qloo&apos;s taste graph finds artists like the ones you love</span></li>
-              <li><b>3</b><span>Real songs, picked for your mood, ready to play</span></li>
-            </ol>
-          )}
         </header>
+
+        {!result && !loading && (
+          <section className="card demo" aria-labelledby="h-demo">
+            <h2 id="h-demo">See it work in one tap</h2>
+            <p className="hint">Pick a moment. Batus asks Qloo, then plays real songs. No typing needed.</p>
+            <div className="demos">
+              {EXAMPLES.map((ex) => (
+                <button key={ex.id} type="button" className="demo-btn" onClick={() => runExample(ex)}>
+                  <b>{ex.title}</b>
+                  <small>{ex.sub}</small>
+                  <span className="who">{ex.artists.join(' · ')}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
 
         <section className="card" aria-labelledby="h-theme">
           <h2 id="h-theme">What are you going through?</h2>
@@ -260,6 +290,11 @@ export default function Batus() {
           {artists.length === 0 && <p className="hint">None yet. You can start from the mood alone, or search an artist below.</p>}
           <ArtistSearch onPick={addArtist} added={savedNames} full={artists.length >= MAX_ARTISTS} />
 
+          <label className="switch">
+            <input type="checkbox" checked={deeper} onChange={(e) => setDeeper(e.target.checked)} />
+            <span><b>Go beyond the famous names.</b> Ask Qloo for lesser-known artists that still match your taste.</span>
+          </label>
+
           {health?.agent && (
             <label className="switch">
               <input type="checkbox" checked={useAi} onChange={(e) => setUseAi(e.target.checked)} />
@@ -281,7 +316,7 @@ export default function Batus() {
           {loading ? <><span className="spinner sm" aria-hidden="true" /> Finding your music...</> : 'Find my music'}
         </button>
         <div className="status" role="alert">
-          {error && (<><span>{error}</span> <button type="button" className="chip retry" onClick={go}>Try again</button></>)}
+          {error && (<><span>{error}</span> <button type="button" className="chip retry" onClick={retry}>Try again</button></>)}
         </div>
         <p className="toast" role="status" aria-live="polite">{toast}</p>
 
@@ -294,11 +329,11 @@ export default function Batus() {
               onRetrySongs={() => loadSongs(result)}
               onReroll={() => loadSongs(result, true)}
               data={result}
-              theme={theme}
-              mode={mode}
+              theme={resultTheme}
+              mode={resultMode}
               savedNames={savedNames}
               player={player}
-              playlist={playlists[mode] || []}
+              playlist={playlists[resultMode] || []}
               onAddSong={addSong}
               onSave={(p) => { addArtist({ name: p.name, id: p.id, image: p.image || undefined }); flash(`${p.name} added to your sound.`); }}
               onRestart={() => { songsRun.current += 1; setResult(null); setText(''); topRef.current?.scrollIntoView({ behavior: 'smooth' }); }}

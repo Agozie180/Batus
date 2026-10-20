@@ -1,6 +1,6 @@
 # Batus: when your mind won't stop or your heart is hurting, your own music answers first
 
-[![CI](https://github.com/Agozie180/Batus/actions/workflows/ci.yml/badge.svg)](https://github.com/Agozie180/Batus/actions/workflows/ci.yml) ![tests](https://img.shields.io/badge/tests-74%20passing-brightgreen) ![license](https://img.shields.io/badge/license-MIT-blue) ![Qloo](https://img.shields.io/badge/powered%20by-Qloo-f2b04c)
+[![CI](https://github.com/Agozie180/Batus/actions/workflows/ci.yml/badge.svg)](https://github.com/Agozie180/Batus/actions/workflows/ci.yml) ![tests](https://img.shields.io/badge/tests-87%20passing-brightgreen) ![license](https://img.shields.io/badge/license-MIT-blue) ![Qloo](https://img.shields.io/badge/powered%20by-Qloo-f2b04c)
 
 | | |
 |---|---|
@@ -24,7 +24,7 @@ Overthinking and worry don't arrive on a schedule. After a result you hoped for 
 
 **No artist is hard-coded.** Every artist comes from the person (typeahead backed by Qloo search) or from Qloo's taste graph, in any genre, language or country. With no seed artists at all, Batus asks Qloo from the mood alone. Batus then builds **a set of real songs for what you are going through**: it pulls tracks by the artists Qloo returned (public iTunes Search API, with 30-second previews) and selects and orders them for your situation. With the Claude key on, Claude reads your check-in and the numbered song list and chooses by id, with a one-line reason per song (an invented id is dropped). Without it, mood words in titles pick them. You can add songs to **your own playlists**, one per mood, saved on your device.
 
-It then goes a step further and suggests something to listen to or watch from the same taste, and shows a **taste signature** (the top tags Qloo attached to your matches) with a match bar for each artist.
+It then builds a small **comfort kit** from the same taste signal, one Qloo match each for a podcast, a show, a film and a book, and shows a **taste signature** (the top tags Qloo attached to your matches) with a match bar for each artist.
 
 **Who it is for:** people in hard seasons, such as worry about money and results or the end of a relationship, whose personal taste (any genre, any country) generic playlists and LLM answers rarely reflect.
 
@@ -32,7 +32,7 @@ It then goes a step further and suggests something to listen to or watch from th
 
 | Criterion | Where to look |
 |---|---|
-| **Technological implementation** | Qloo `/search`, `/v2/tags`, `/v2/insights` (artists, podcasts, TV, location) with a rate-limit gate, retries and caching; Claude tool-use agent and song picker that can only choose by id; layered safety; two-phase signed loading; 74 tests, CI |
+| **Technological implementation** | Qloo `/search`, `/v2/tags`, `/v2/insights` across five domains (artists, podcasts, TV, film, books) plus location and popularity filters, with a rate-limit gate, retries and caching; Claude tool-use agent (parallel Qloo calls) and song picker that can only choose by id; layered safety; two-phase signed loading; 87 tests, CI |
 | **Design** | Calm, mobile-first UI; one loading state; reliable artist autocomplete; playable previews; per-mood playlists; no account |
 | **Potential impact** | A comfort tool for people in hard moments, with a crisis gate that stops the music and shows human help |
 | **Quality of the idea** | Qloo is the engine, not decoration: without it there are no taste-matched artists, no mood-tag steering, no podcast or show matches. The songs themselves come from a real catalogue, never invented |
@@ -56,7 +56,8 @@ Every result opens with a **"What Qloo added"** card built only from what Qloo r
         ▼
  your artists ──► Qloo /search (live typeahead picks give Qloo ids up front)
         │
-        ├─ Claude agent ON ─► tools: find_artist · taste_matches (artist | podcast | tv_show) · finish
+        ├─ Claude agent ON ─► tools: find_artist · taste_matches (artist | podcast | tv_show | movie | book) · finish
+        │                      independent calls run in parallel; the person's chosen mood sets the tags
         │                      Claude chooses by ID, writes one warm message
         │                      code keeps only IDs the tools returned
         │
@@ -73,7 +74,7 @@ Every result opens with a **"What Qloo added"** card built only from what Qloo r
 |---|---|---|
 | Qloo `GET /search` | Yes | Powers the live artist typeahead and ID resolution |
 | Qloo `GET /v2/tags` | Yes | Resolves mood keywords to music tags (first two found per mode) |
-| Qloo `GET /v2/insights` | Yes | Artists, podcasts and TV shows; optional `signal.location.query` for local relevance |
+| Qloo `GET /v2/insights` | Yes | Artists, podcasts, TV shows, films and books; optional `signal.location.query` for local relevance; optional `filter.popularity.max` ("go beyond the famous names"), retried without it if Qloo rejects it |
 | Claude (tool use) | Optional | Runs the agent loop and writes the message. Off if `ANTHROPIC_API_KEY` is unset, and the app still works fully |
 | iTunes Search API (public, no key) | Yes | Real tracks (and 30-second previews) of artists Qloo chose; the set is picked from these. Optional: without it, YouTube/Spotify search links |
 | Streaming accounts | No | Full songs open on YouTube or Spotify via links |
@@ -93,7 +94,7 @@ Every result opens with a **"What Qloo added"** card built only from what Qloo r
 
 | Claim | Result | Reproduce with |
 |---|---|---|
-| Behaviour tests (crisis gate, Qloo client, fallbacks, agent loop, grounding) | 74 / 74 passing | `npm test` |
+| Behaviour tests (crisis gate, Qloo client, fallbacks, agent loop, grounding) | 87 / 87 passing | `npm test` |
 | Production build | Passes, 0 known dependency vulnerabilities | `npm run build && npm audit` |
 | End-to-end over real HTTP: UI → API → agent → Qloo/Claude tools → UI | Exercised against a local stand-in for both services | see Limitations |
 | Self-audit: findings fixed and pinned by tests | 7 findings, see [AUDIT.md](./AUDIT.md) | `npm test` |
@@ -116,6 +117,7 @@ npm test
 
 Things to try:
 0. Switch between **Worry & overthinking** and **Heartbreak**. Each keeps its own saved sound, and the mood tags sent to Qloo change.
+0b. Tap one of the **See it work in one tap** moments on the home screen: it fills in a situation and artists and runs it.
 1. Type "Sinach" in *Favourite artists*. Suggestions come live from Qloo, with a photo when Qloo has one.
 2. Choose **Calm me**, then **Lift me up** with the same artists and open *How this was chosen* to see the mood tag change.
 3. Set **Near** to a city and compare the matches.
@@ -133,7 +135,8 @@ Without `QLOO_API_KEY` the app runs in **sample mode**: a small fixed list, labe
 
 ## Limitations, stated plainly
 
-- **Verified live (16 Oct 2026):** the deployed `/api/diagnose` passes every Qloo step (search, tags, insights for artists and podcasts) and the iTunes song lookup against the real services. **Not yet verified live: the Claude path** (the demo deployment has no `ANTHROPIC_API_KEY`, so song choice there uses the mood scorer). Claude behaviour is tested only against a stand-in. Check *How this was chosen* in the UI for what actually happened on any run.
+- **Verified live (re-run 19 Oct 2026):** the deployed `/api/diagnose` passes every Qloo step (search, tags, insights for artists and podcasts) and the iTunes song lookup against the real services. **Not yet verified live: the Claude agent path and the new film/book and "lesser-known" Qloo queries.** They are exercised end to end over real HTTP against local stand-ins for Qloo, Claude and the song catalogues, and `/api/diagnose` now makes a real Claude call when a key is set. Until a key is on the deployment, `/api/health` shows `agent:false` and the standard Qloo pipeline runs. Check *How this was chosen* in the UI for what actually happened on any run.
+- The second song source (Deezer, used only when Apple returns nothing) is written against Deezer's documented public search shape and tested against a stand-in only.
 - Qloo's coverage of any particular artist is unmeasured until `npm run coverage` is run with a key. If Qloo does not know an artist, Batus says so and falls back to the mood alone.
 - Songs come from Apple's public iTunes Search API. Which of them fit your situation is decided by Claude (when on) from titles and what it knows of the songs, or by mood words in titles when off. Neither hears the audio or reads lyrics, so a pick can miss. Previews are 30 seconds; full songs open on YouTube or Spotify.
 - If something shows "Qloo problem", open `/api/diagnose`: it shows the real HTTP status from each call.

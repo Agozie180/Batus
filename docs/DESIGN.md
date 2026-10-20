@@ -20,10 +20,12 @@ A person in a hard moment, awake and alone with a loud mind: waiting on results,
 
 | Situation | Mode | Qloo taste tags requested | Feel |
 |---|---|---|---|
-| Worry & overthinking | Calm me | calm, ambient, acoustic, worship | slow, breathe |
-| Worry & overthinking | Lift me up | upbeat, dance, feel good | stand and move |
-| Heartbreak | Calm me | heartbreak, sad | feel it, cry if needed |
-| Heartbreak | Lift me up | uplifting, empowering | own your worth |
+| Worry & overthinking | Calm me | acoustic, ambient, folk, worship | slow, breathe |
+| Worry & overthinking | Lift me up | dance, afrobeats, pop | stand and move |
+| Heartbreak | Calm me | sad, soul, r&b, ballad | feel it, cry if needed |
+| Heartbreak | Lift me up | empowering, uplifting, pop, r&b | own your worth |
+
+The first two tags Qloo resolves as music tags are used. The person's chosen mood always decides the tags: the agent cannot override it.
 
 Tags are resolved at run time with `/v2/tags`; if a tag does not exist or the query is refused, the pipeline degrades (drop location, then drop tags) instead of failing.
 
@@ -45,7 +47,7 @@ Tags are resolved at run time with `/v2/tags`; if a tag does not exist or the qu
 
 - **P0** Safety gate that runs before everything. Qloo pipeline with grounding. One-tap flow. Sample mode when no key.
 - **P1** Claude agent over Qloo tools with ID-only selection. Live Qloo typeahead. Heartbreak theme.
-- **P2** Podcast and TV from the same taste. Taste signature. Location signal. Per-theme saved sound.
+- **P2** Comfort kit (podcast, TV, film, book) from the same taste; popularity filter ("go beyond the famous names"). Taste signature. Location signal. Per-theme saved sound.
 - **P3** Breathing exercise. "Write it, do not send it". PWA manifest.
 
 ## Non-goals (deliberately not built)

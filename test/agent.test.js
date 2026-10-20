@@ -128,7 +128,7 @@ test('if the agent skips the optional listen/watch step, Qloo-grounded extras ar
     ]),
   });
   const r = await runAgent({ ...base, fetchImpl });
-  assert.deepEqual(r.extras.map((e) => e.name).sort(), ['Gentle Evenings', 'Morning Grace']);
+  assert.deepEqual(r.extras.map((e) => e.name).sort(), ['Gentle Evenings', 'Morning Grace', 'Quiet Hours', 'The Slow Morning']);
 });
 
 test('AUDIT: the agent cannot add its own taste seeds (find_artist only accepts the person\'s artists)', async () => {

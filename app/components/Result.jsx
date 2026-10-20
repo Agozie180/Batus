@@ -5,7 +5,7 @@ import Avatar from './Avatar';
 import Breathe from './Breathe';
 import ParkIt from './ParkIt';
 import SongRow from './SongRow';
-import { KIND, LINK_LABEL, SOURCE_LABEL, THEMES } from '../config';
+import { KIND, LINK_LABEL, SOURCE_LABEL, THEMES, WEB_LABEL } from '../config';
 
 const pctOf = (a) => (typeof a === 'number' ? Math.round(Math.min(1, Math.max(0, a)) * 100) : null);
 
@@ -15,12 +15,13 @@ function matchLabel(p) {
   return pct >= 99 ? 'Top match' : `${pct}% match`;
 }
 
-function Links({ links, primary }) {
+function Links({ links, primary, type }) {
+  const label = (k) => (k === 'web' && WEB_LABEL[type]) || LINK_LABEL[k];
   return (
     <div className="play">
       {Object.entries(links).map(([k, href], i) => (
         <a key={k} href={href} target="_blank" rel="noopener noreferrer">
-          {i === 0 ? (primary || `Play on ${LINK_LABEL[k]}`) : LINK_LABEL[k]}
+          {i === 0 ? (primary || `Play on ${label(k)}`) : label(k)}
         </a>
       ))}
     </div>
@@ -83,20 +84,41 @@ function Hero({ p, saved, onSave, player, inList, onAddSong }) {
 
 
 // What Qloo contributed, computed only from what Qloo actually returned for this check-in.
-function QlooReport({ data, music, beyond, recognised }) {
+function qlooFacts({ data, music, beyond }) {
   const tops = music.map((m) => ({ m, pct: pctOf(m.affinity) })).filter((x) => x.pct !== null).sort((a, b) => b.pct - a.pct);
-  const top = tops[0];
-  const tags = data.signature?.length || 0;
-  const podcast = beyond.find((b) => b.type === 'podcast');
-  const show = beyond.find((b) => b.type === 'tv_show');
-  const moodTag = data.moodTags?.[0];
+  return { top: tops[0], tags: data.signature?.length || 0, kinds: new Set(beyond.map((b) => b.type)).size, moodTag: data.moodTags?.[0] };
+}
+
+function QlooStats({ data, music, beyond }) {
   if (data.source !== 'qloo' || music.length === 0) return null;
+  const { top, tags, kinds } = qlooFacts({ data, music, beyond });
   const stats = [
     [music.length, 'artists from the taste graph'],
     top ? [`${top.pct}%`, 'best measured match'] : null,
     tags ? [tags, 'taste tags attached'] : null,
-    beyond.length ? [beyond.length, 'podcast & show matches'] : null,
+    kinds ? [kinds, kinds === 1 ? 'other domain matched' : 'other domains matched'] : null,
   ].filter(Boolean);
+  return (
+    <section className="qreport compact" aria-labelledby="qr-h">
+      <div className="qr-head">
+        <span className="qr-badge">Qloo</span>
+        <div>
+          <h2 id="qr-h">What Qloo added</h2>
+          <p>A chatbot can describe music. Qloo measures taste.</p>
+        </div>
+      </div>
+      <ul className="qr-stats">
+        {stats.map(([n, l]) => <li key={l}><b>{n}</b><span>{l}</span></li>)}
+      </ul>
+    </section>
+  );
+}
+
+function QlooCompare({ data, music, beyond, recognised }) {
+  if (data.source !== 'qloo' || music.length === 0) return null;
+  const { top, moodTag } = qlooFacts({ data, music, beyond });
+  const names = (t) => beyond.find((b) => b.type === t)?.name;
+  const kit = [['a podcast', names('podcast')], ['a show', names('tv_show')], ['a film', names('movie')], ['a book', names('book')]].filter(([, n]) => n);
   const rows = [
     ['Where the artists come from',
       'Its memory of text it was trained on. Often the same famous names, and it can invent one.',
@@ -109,20 +131,11 @@ function QlooReport({ data, music, beyond, recognised }) {
       moodTag ? `Qloo's own music tag, “${moodTag}”, steered the match.` : 'Qloo mood tags steer the match.'],
     ['Beyond music',
       'Usually stays with music.',
-      podcast || show ? `From the same taste: ${[podcast && `the podcast ${podcast.name}`, show && `the show ${show.name}`].filter(Boolean).join(' and ')}.` : 'Podcasts and TV from the same taste.'],
+      kit.length ? `From the same taste: ${kit.map(([k, n]) => `${k} (${n})`).join(', ')}.` : 'Podcasts, shows, films and books from the same taste.'],
   ];
   return (
-    <section className="qreport" aria-labelledby="qr-h">
-      <div className="qr-head">
-        <span className="qr-badge">Qloo</span>
-        <div>
-          <h2 id="qr-h">What Qloo added</h2>
-          <p>A chatbot can describe music. Qloo measures taste.</p>
-        </div>
-      </div>
-      <ul className="qr-stats">
-        {stats.map(([n, l]) => <li key={l}><b>{n}</b><span>{l}</span></li>)}
-      </ul>
+    <details className="qcompare">
+      <summary>Why Qloo, and not just a chatbot?</summary>
       <div className="qr-table" role="table" aria-label="A chatbot alone compared with Qloo in Batus">
         <div className="qr-row qr-h" role="row"><span role="columnheader" /><span role="columnheader">A chatbot alone</span><span role="columnheader" className="q">Qloo, in Batus</span></div>
         {rows.map(([k, a, b]) => (
@@ -133,7 +146,29 @@ function QlooReport({ data, music, beyond, recognised }) {
           </div>
         ))}
       </div>
-      <p className="qr-legend"><span className="prov q">Qloo</span> artists, match %, tags, podcast, show <span className="prov a">Apple catalogue</span> songs and previews <span className="prov y">You</span> your own artists</p>
+      <p className="qr-legend"><span className="prov q">Qloo</span> artists, match %, tags, podcast, show, film, book <span className="prov a">Apple / Deezer catalogue</span> songs and previews <span className="prov y">You</span> your own artists</p>
+    </details>
+  );
+}
+
+// Podcast, show, film and book: one Qloo match per domain, from the same taste.
+function Kit({ items }) {
+  if (!items.length) return null;
+  return (
+    <section aria-labelledby="kit-h">
+      <h2 className="section-title" id="kit-h">Your comfort kit, from the same taste</h2>
+      <p className="hint">Qloo is cross-domain: the same taste signal that found your music also found these.</p>
+      <div className="kit">
+        {items.map((p) => (
+          <div className="kit-tile" key={p.id || p.name}>
+            <span className="kind">{KIND[p.type] || 'Pick'}</span>
+            <h3>{p.name}</h3>
+            {p.tags?.length > 0 && <p className="meta">{p.tags.slice(0, 2).join(' · ')}</p>}
+            {matchLabel(p) && <span className="matchpill">{matchLabel(p)}</span>}
+            <Links links={p.links} type={p.type} />
+          </div>
+        ))}
+      </div>
     </section>
   );
 }
@@ -173,9 +208,15 @@ export default function Result({ data, theme, mode, savedNames, songsState, onRe
           <button type="button" className="chip" onClick={() => setBreathing(true)}>Take 4 slow breaths first</button>
         )}
         {breathing && <Breathe onDone={() => setBreathing(false)} />}
+        {data.agent && data.steps?.length > 0 && (
+          <div className="agentsteps" aria-label="What the agent did">
+            <span className="lbl">What the agent did</span>
+            <ol>{data.steps.map((st, i) => <li key={i}>{st}</li>)}</ol>
+          </div>
+        )}
       </div>
 
-      <QlooReport data={data} music={music} beyond={beyond} recognised={recognised} />
+      <QlooStats data={data} music={music} beyond={beyond} />
 
       {data.unmatched?.length > 0 && (
         <p className="notice" role="status">
@@ -268,12 +309,9 @@ export default function Result({ data, theme, mode, savedNames, songsState, onRe
         <div className="list">{rest.map((p) => <Card key={p.id || p.name} p={p} saved={saved(p)} onSave={onSave} {...song} />)}</div>
       ) : null}
 
-      {beyond.length > 0 && (
-        <>
-          <h2 className="section-title">Beyond music, from the same taste</h2>
-          <div className="list">{beyond.map((p) => <Card key={p.id || p.name} p={p} />)}</div>
-        </>
-      )}
+      <Kit items={beyond} />
+
+      <QlooCompare data={data} music={music} beyond={beyond} recognised={recognised} />
 
       <ParkIt key={theme} copy={THEMES[theme].park} />
 

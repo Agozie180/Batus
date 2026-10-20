@@ -18,7 +18,7 @@ test('live path: Qloo artists, seeds dropped, mood tag + location sent, cross-do
   assert.equal(r.picks[0].affinity, 0.91);
   assert.equal(r.picks[0].image, 'https://img/a1.jpg');
   assert.match(r.picks[0].links.youtube, /uplifting%20dance%20songs/);
-  assert.deepEqual(r.extras.map((e) => e.name).sort(), ['Gentle Evenings', 'Morning Grace']);
+  assert.deepEqual(r.extras.map((e) => e.name).sort(), ['Gentle Evenings', 'Morning Grace', 'Quiet Hours', 'The Slow Morning']);
   assert.equal(r.favourites[0].title, 'Bata');
 
   const artistQuery = log.find((c) => c.path === '/v2/insights' && c.params['filter.type'] === 'urn:entity:artist');

@@ -21,6 +21,8 @@ export const qlooRoutes = {
     const type = u.searchParams.get('filter.type');
     if (type === 'urn:entity:podcast') return ok({ results: { entities: [{ entity_id: 'p1', name: 'Morning Grace', query: { affinity: 0.7 } }] } });
     if (type === 'urn:entity:tv_show') return ok({ results: { entities: [{ entity_id: 't1', name: 'Gentle Evenings', query: { affinity: 0.6 } }] } });
+    if (type === 'urn:entity:movie') return ok({ results: { entities: [{ entity_id: 'm1', name: 'Quiet Hours', query: { affinity: 0.55 } }] } });
+    if (type === 'urn:entity:book') return ok({ results: { entities: [{ entity_id: 'b1', name: 'The Slow Morning', query: { affinity: 0.5 } }] } });
     return ok({
       results: {
         entities: [

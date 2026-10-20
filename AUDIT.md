@@ -20,9 +20,22 @@ Findings from reviewing Batus against its own thesis and against common web and 
 | 9 | One check-in could spend up to 9 iTunes searches (limit is about 20 a minute per IP) | 6 per check-in, shared Next data cache for 6 h | build config |
 | 10 | Handoff claimed "not deployed" while the app is live | Corrected; live `/api/diagnose` result recorded | Handoff.md |
 
+## Round 10 findings (19 Oct 2026, from root)
+
+| # | Finding | Fix | Pinned by |
+|---|---|---|---|
+| 11 | The agent only ran when the person had added artists, so a judge tapping the button on a fresh page never saw it | Agent can start from the mood alone (only when the person gave no artists, so it still cannot add its own seeds) | `round10.test.js` "starts from the mood alone", "NOT a loophole" |
+| 12 | In agent mode the Qloo mood tags were lost, so the "What Qloo added" card and per-song Qloo reasons were generic | Agent returns the tags it used | `round10.test.js` |
+| 13 | The model could override the person's chosen mood by passing its own `vibe` to Qloo | `vibe` removed; the chosen mood always sets the tags | `round10.test.js` "vibe is ignored" |
+| 14 | Agent time budget (24 s) plus fallback could exceed the 30 s function limit | Budget 18 s, 5 turns, independent tool calls run in parallel | build config |
+| 15 | `finish` in the same step as other tool calls dropped those calls | Other calls run first, then finish | `round10.test.js` |
+| 16 | Apple's per-IP rate limit is the single point of failure for songs | Deezer public search as a second source, only when Apple returns nothing | `round10.test.js` |
+| 17 | `/api/diagnose` revealed the Qloo key's length and never tested Claude | Length removed; real Claude call added when a key is set (reports wrong model names plainly) | `round10.test.js` |
+| 18 | Songs added after toggling mood went to the wrong playlist | Playlist follows the mood the result was made for | UI |
+
 ## Known gaps (not fixed, stated plainly)
 
 - Rate limiting is per serverless instance, so it is a speed bump, not a boundary.
 - The agent's prose is guarded (checked for Qloo names) but is still model-written text. Picks are structurally grounded; prose is not.
 - The crisis check is keyword-based and will miss indirect wording.
-- The live Qloo and Claude calls have not yet been exercised with real keys from this build.
+- Live Qloo search, tags and insights are verified on the deployment; the Claude agent, film/book queries, the popularity filter and the Deezer source are verified against stand-ins only until a key is set and `/api/diagnose` is re-run.

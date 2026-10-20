@@ -59,10 +59,19 @@ export const THEMES = {
   },
 };
 
+// One-tap moments for a first-time visitor. The artists are the person's own taste
+// (inputs); every recommendation still comes back from Qloo.
+export const EXAMPLES = [
+  { id: 'results', theme: 'worry', mode: 'calm', title: 'Results came out', sub: 'Worry · Calm me', text: "The results were announced and I didn't win.", artists: ['Sinach', 'Hillsong Worship'] },
+  { id: 'breakup', theme: 'heartbreak', mode: 'release', title: 'After the breakup', sub: 'Heartbreak · Calm me', text: 'She broke up with me and I cannot stop thinking about it.', artists: ['Adele', 'SZA'] },
+  { id: 'rise', theme: 'heartbreak', mode: 'heal', title: 'Time to rise', sub: 'Heartbreak · Lift me up', text: 'I ended it, and I still feel terrible.', artists: ['Burna Boy', 'Beyoncé'] },
+];
+
 export const defaultProfile = () => ({ artists: [], songs: [], location: '' });
 
 export const LINK_LABEL = { youtube: 'YouTube', spotify: 'Spotify', audiomack: 'Audiomack', web: 'Where to watch' };
-export const KIND = { artist: 'Music', podcast: 'Listen', tv_show: 'Watch', movie: 'Watch' };
+export const KIND = { artist: 'Music', podcast: 'Listen', tv_show: 'Watch', movie: 'Film', book: 'Read' };
+export const WEB_LABEL = { tv_show: 'Where to watch', movie: 'Where to watch', book: 'Find the book' };
 
 export const SOURCE_LABEL = {
   qloo: 'Live Qloo taste graph',
